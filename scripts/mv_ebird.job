@@ -1,0 +1,23 @@
+#!/bin/bash
+#PBS -l select=1:ncpus=32:mem=32gb
+#PBS -l walltime=99999999:00:00
+#PBS -N mv_polytelis
+#PBS -j oe
+#PBS -m ae
+#PBS -M kprovost@amnh.org
+#PBS -k oe
+
+#rsync -avzP --remove-source-files /home/kprovost/nas1/ENMs/NOT_RESCALED/OLD/ebd_relMay-2017.tar /vz-nas2-archive/
+
+#rsync -avzP --remove-source-files /home/kprovost/nas2/Analysis_SLiM/* /vz-nas2-archive/SLiM_Pipeline-Archive/FINAL_CH_1/
+
+cd $PBS_O_WORKDIR
+echo "pbsworkdir"
+echo $PBS_O_WORKDIR
+EXECDIR=`pwd`
+export PATH=./:$PATH
+echo $PATH
+
+cd /home/kprovost/nas3/ >> testtest.log 2>&1
+
+rsync -avzP --remove-source-files /dtn1/kprovost/* /vz-nas1-active/ >> testtest.log 2>&1
