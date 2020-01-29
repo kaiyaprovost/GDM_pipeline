@@ -4,10 +4,10 @@ FIRSTSTEP = 7
 #detach("package:subsppLabelR", unload = TRUE)
 library(devtools)
 devtools::install_github('kaiyaprovost/subsppLabelR', force = F)
-devtools::install_github("cran/ecospat")
-devtools::install_github("danlwarren/ENMTools")
-devtools::install_github("rsh249/rasterExtras")
-devtools::install_github("petrelharp/landsim")
+devtools::install_github("cran/ecospat", force = F)
+devtools::install_github("danlwarren/ENMTools", force = F)
+devtools::install_github("rsh249/rasterExtras", force = F)
+devtools::install_github("petrelharp/landsim", force = F)
 library(subsppLabelR)
 library(ecospat)
 library(ENMTools)
@@ -91,7 +91,7 @@ if (FIRSTSTEP <= 7) {
     ## split data into four equal blocks and different feature classes 
     ## throws errors with hinge 
     res = ENMevaluate(occ=loc, env = Env, method='block', 
-                      parallel=T, numCores=16, fc=c("L", "LQ"), 
+                      parallel=T, numCores=8, fc=c("L", "LQ"), 
                       RMvalues=seq(0.5,4,0.5), rasterPreds=T,
                       updateProgress = T)
     ## this uses your occurences and trimmed env data. it will
@@ -161,103 +161,24 @@ if (FIRSTSTEP <= 7) {
       dev.off()
     }
     
-    ## and now with mcp background data 
-    mcp <- function (xy) { 
-      xy <- as.data.frame(coordinates(xy))
-      coords.t <- chull(xy[, 1], xy[, 2])
-      xy.bord <- xy[coords.t, ]
-      xy.bord <- rbind(xy.bord[nrow(xy.bord), ], xy.bord)
-      return(SpatialPolygons(list(Polygons(list(Polygon(as.matrix(xy.bord))), 1))))
-    }
+    ## this is where it was getting stuck 
+    ## remove stuff from memory now that done 
     
-    MCP.locs = mcp(thinned[,2:3])
+    rm(p1.equal)
+    rm(p1.nomit)
+    rm(p1.spsen)
+    rm(pred.raw)
+    rm(res)
+    rm(setsort)
+    rm(setsort2)
+    rm(th1)
+    rm(thinned)
+    rm(top)
+    rm(loc)
+    rm(extr)
+    rm(best)
+    rm(ev.set)
     
-    if(plotStuff==T) {
-      png(paste("MinConvexPolygon_",sppname,"_addedLayers_zoomedin.png",sep=""))
-      plot(Env[[1]], col=viridis::viridis(99))
-      plot(MCP.locs, add=T)
-      points(loc,pch=3,col=rgb(1,0,0,0.1))
-      dev.off()
-    }
-    
-    ## background points inside polygon only, and also just on landmasses
-    envPoly <- rasterToPolygons(Env[[1]], fun=NULL, na.rm=T)
-    bg.area.locs <- gIntersection(envPoly, MCP.locs)
-    MCP.raster.locs <- rasterize(bg.area.locs, Env[[1]])
-    bg.points.locs <- randomPoints(mask = MCP.raster.locs, n = 10000)
-    if (plotStuff==T) {
-      png(paste("MinConvexPolygon_points_",sppname,"_addedLayers_zoomedin.png",sep=""))
-      plot(Env[[1]], col=viridis::viridis(99))
-      points(bg.points.locs)
-      points(loc,pch=3,col=rgb(1,0,0,0.1))
-      dev.off()
-    }
-    
-    ## with only this polygon of bg points
-    ## keeps failing -- non conformable arguments
-    
-    ## debugging
-    bgpointsres = ENMevaluate(occ=loc, env = Env, method='block',  
-                              bg.coords=bg.points.locs,
-                              parallel=T, numCores=16, fc=c("L", "LQ"), 
-                              RMvalues=seq(0.5,4,0.5), rasterPreds=T,
-                              updateProgress = T)
-    
-    png(paste("BgPointsPlot_Mean.AUC_",sppname,"_addedLayers_zoomedin.png",sep=""))
-    eval.plot(bgpointsres@results, "avg.test.AUC")
-    dev.off()
-    
-    setsort = bgpointsres@results[order(bgpointsres@results[,'avg.test.or10pct']),]
-    head(setsort)
-    setsort2 = setsort[order(setsort[,'avg.test.AUC'], decreasing=TRUE),]
-    head(setsort2)
-    top = setsort2[1,]
-    write.csv(setsort2,file=paste("BgPoints_ResultsTable_",sppname,"_addedLayers_zoomedin.csv",sep=""))
-    
-    
-    best.bg = which(as.character(bgpointsres@results[,1]) == as.character(setsort2[1,1]))
-    if (plotStuff==T) {
-      pred.bg = predict(Env, bgpointsres@models[[best.bg]])
-      writeRaster(pred.bg,filename=paste("BgPointsPlot_PredRaw_BestModel_",sppname,"_addedLayers_zoomedin.asc",sep=""),
-                  format="ascii",overwrite=T)
-      png(paste("BgPointsPlot_PredRaw_BestModel_",sppname,"_addedLayers_zoomedin.png",sep=""))
-      plot(pred.bg, col=viridis::viridis(99))
-      points(loc,pch=3,col=rgb(1,0,0,0.1))
-      #points(bg.points.thinlocs,col="red")
-      dev.off()
-    }
-    print(bgpointsres@results[best.bg,])
-    
-    ev.set <- evaluate(thinned[,2:3], bgpointsres@bg.pts, 
-                       bgpointsres@models[[best.bg]], Env)
-    th2 = threshold(ev.set) ## omission options
-    
-    write.csv(th2,file=paste("BgPoints_ThreshTable_",sppname,"_addedLayers_zoomedin.csv",sep=""))
-    
-    if(plotStuff==T){
-      p2.nomit = pred.bg >= th2$no_omission ## the highest thresh where no points are omittec
-      p2.equal = pred.bg >= th2$equal_sens_spec ## equal sensitivity and specificity according to ROC curve
-      p2.spsen = pred.bg >= th2$spec_sens 
-      
-      writeRaster(p2.nomit,filename=paste("BgPoints_Thresh_NoOmission_BestModel_",sppname,"_addedLayers_zoomedin.asc",sep=""),
-                  format="ascii",overwrite=T)
-      writeRaster(p2.equal,filename=paste("BgPoints_Thresh_EqualSensSpec_BestModel_",sppname,"_addedLayers_zoomedin.asc",sep=""),
-                  format="ascii",overwrite=T)
-      writeRaster(p2.spsen,filename=paste("BgPoints_Thresh_MaxSpecSens_BestModel_",sppname,"_addedLayers_zoomedin.asc",sep=""),
-                  format="ascii",overwrite=T)
-      png(paste("BgPoints_Thresh_NoOmission_BestModel_",sppname,"_addedLayers_zoomedin.png",sep=""))
-      plot(p2.nomit, col=viridis::viridis(99))
-      points(loc,pch=3,col=rgb(1,0,0,0.1))
-      dev.off()
-      png(paste("BgPoints_Thresh_EqualSensSpec_BestModel_",sppname,"_addedLayers_zoomedin.png",sep=""))
-      plot(p2.equal, col=viridis::viridis(99))
-      points(loc,pch=3,col=rgb(1,0,0,0.1))
-      dev.off()
-      png(paste("BgPoints_Thresh_MaxSpecSens_BestModel_",sppname,"_addedLayers_zoomedin.png",sep=""))
-      plot(p2.spsen, col=viridis::viridis(99))
-      points(loc,pch=3,col=rgb(1,0,0,0.1))
-      dev.off()
-    }
   }
   
 }
