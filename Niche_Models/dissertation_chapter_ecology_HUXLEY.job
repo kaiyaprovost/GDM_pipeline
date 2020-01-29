@@ -1,0 +1,12 @@
+#!/bin/bash
+#PBS -l select=1:ncpus=16
+#PBS -l walltime=9999999:00:00
+#PBS -N enms_usa
+#PBS -j oe
+#PBS -m ae
+#PBS -M kprovost@amnh.org
+#PBS -k oe
+
+cd /home/kprovost/nas1/ENMs/
+
+Rscript /home/kprovost/nas1/ENMs/dissertation_chapter_ecology_HUXLEY.R
