@@ -1,19 +1,24 @@
-library(RColorBrewer)
-library(corrplot)
-library(devtools)
+dynamic_require <- function(package) {
+  if (eval(parse(text = paste("require(", package, ")"))))
+    return(TRUE)
+  install.packages(package)
+  return(eval(parse(text = paste(
+    "require(", package, ")"
+  ))))
+}
+packages = c("PopGenome", "moments", "R.utils", "gtools","progress", "RColorBrewer",
+             "corrplot", "devtools", "ggbiplot", "dabestr", "factoextra", "cluster",
+             "tidyverse","caret","MASS","plotly","lme4")
+for (p in packages) {
+  dynamic_require(p)
+}
 #install_github("vqv/ggbiplot",force=T)
-library(ggbiplot)
-library(dabestr)
-library(factoextra)
-library(cluster)
-library(tidyverse)
-library(caret)
-library(MASS)
-library(plotly)
-library(lme4)
 
+generateData=F
+plotResid=F
 
-## perform aggregation 
+## perform aggregation
+if(generateData==T){
 print("AGGREGATE"); {
   path = "/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/"
   setwd(path)
@@ -163,11 +168,13 @@ print("AGGREGATE"); {
   write.csv(mergeAgg,file=paste("KLP_Master_Spreadsheet_Morphology_AGGREGATED_",format(Sys.time(),"%d_%B_%Y"),".csv",sep=""),
             na="")
   
-  morph = read.table("KLP_Master_Spreadsheet_Morphology_AGGREGATED_18_July_2019.csv",
+  morph = read.csv("KLP_Master_Spreadsheet_Morphology_AGGREGATED_19_July_2019.csv",
                      sep=",",header=T)
 }; #dev.off()
 
+  
 ## control for body size -- with and without log
+
 print("BODY SIZE"); {
   
   names(morph)[10] = "TAIL"
@@ -261,37 +268,67 @@ print("BODY SIZE"); {
                        format(Sys.time(),"%d_%B_%Y"),".csv",sep=""),
             na="")
 }; dev.off()
-
+}
+  
 ## MAKE DATA SUMMARY
 print("SUMMARIZE"); {
+  
+  datafile="/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/measurements/aggregated datasets/KLP_Master_Spreadsheet_Morphology_AGGREGATED_19_July_2019.csv"
+  df=read.table(datafile,header=T,stringsAsFactors = T,sep="\t",blank.lines.skip = F)
+  data=df[df$CATALOG.NUMBER!="",]
+  data=data[complete.cases(data$CATALOG.NUMBER),]
+  data=data[df$MEASUREMENT!="",]  
+  data=data[complete.cases(data$MEASUREMENT),]
+  ## get rid of ones without beak measurements
+  data=data[complete.cases(data$BILL.HEIGHT),]
+  ## get rid of the ones without tarsus measurements
+  data=data[complete.cases(data$TARSUS.LENGTH),]
+  ## there is now 1 without secondaries and 27 without tails
+  ## this dataset already has females and juvs removed
+  nobad = data[data$CONDITION=="",]
   
   path = "/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/"
   setwd(path)
   
+  {
   #corrplot::corrplot(cor(nolog_res[,24:36],use="pairwise.complete.obs"),
   #                   method="ellipse",type="upper",diag=F)
   
-  nobad = nolog_res[nolog_res$CONDITION=="",]
+  #nobad = nolog_res[nolog_res$CONDITION=="",]
   #noblank1 = nobad[nobad$RES_BEAKAREAVOLUME_CALC!="",]
   #noblank2 = noblank1[!(is.na(noblank1$RES_BEAKAREAVOLUME_CALC)),]
   #noblank = noblank2[!(is.na(noblank2$RES_KIPPSINDEX_CALC)),]
   #males = noblank[noblank$SEX=="MALE",]
-  males = nobad[nobad$SEX=="MALE" | nobad$SEX=="?MALE",]
+  #males = nobad[nobad$SEX=="MALE" | nobad$SEX=="?MALE",]
   
   #males$SPP<-factor(males$SPP, levels=c("CARDINALIS","SINUATUS","FUSCA",
   #                                      "CURVIROSTRE","CRISSALE/DORSALE",
   #                                      "BILINEATA","BRUNNEICAPILLUS","NITENS",
   #                                      "FLAVICEPS","BELLII","MELANURA"))
+  }
   
-  males$SPP = factor(males$SPP, levels=c("SINUATUS","CARDINALIS","FUSCA",
+  males$SPP = factor(males$SPP, levels=sort(c("SINUATUS",#"CARDINALIS",
+                                         "FUSCA",
                                          "BILINEATA","NITENS","FLAVICEPS",
                                          "MELANURA","CRISSALE",
-                                         "CURVIROSTRE","BRUNNEICAPILLUS","BELLII"))
+                                         "CURVIROSTRE","BRUNNEICAPILLUS","BELLII")))
   
-  names=c("SIN","CAR","FUS","BIL","NIT","FLA","MEL","CRI","CUR","BRU","BEL")
-  col=c("white","cyan","cyan","white","white","red","grey","white","cyan","red","cyan")
+  names=sort(c("SIN",#"CAR",
+          "FUS","BIL","NIT","FLA","MEL","CRI","CUR","BRU","BEL"))
+  #col=c("white",#"cyan",
+  #      "cyan","white","white","red","grey","white","cyan","red","cyan")
+  col=rev(viridis::plasma(12))
+  
+  par(mfrow=c(1,1),lwd=1,font.main=4,mar=c(4,4,0,0))
+  png("Analyses and Images/BOXPLOTS/aggregated_beakAreaVolume.png")
+  boxplot(as.numeric(males$BEAKAREAVOLUME_CALC)~males$SPP,horizontal=F,
+          names=names,las=2,
+          xlab="Spp",ylab="Beak Surface Area to Volume Ratio",
+          col=col)
+  dev.off()
   
   ## DOESNT WORK
+  {
   # permuteDeserts = function(SPECIES="MELANURA",N=10000,data=males,colNumber=30){
   #   
   #   ## if no measurements for a species will break
@@ -378,7 +415,27 @@ print("SUMMARIZE"); {
   #     }
   #   }
   # }
+  }
+    
+  chi = males[males$WHICH.SIDE.OF.CFB=="CHIHUAHUAN",]
+  son = males[males$WHICH.SIDE.OF.CFB=="SONORAN",]
+  unk = males[males$WHICH.SIDE.OF.CFB=="UNCLEAR",]
+  no_unk = males[males$WHICH.SIDE.OF.CFB!="UNCLEAR",]
   
+  males$sppside=paste(substr(males$SPP,1,3),substr(males$WHICH.SIDE.OF.CFB,1,3))
+
+  palette(c("cyan","green","grey"))
+  par(mfrow=c(1,3),lwd=1,font.main=4,mar=c(4,4,0,0))
+  png("Analyses and Images/BOXPLOTS/aggregated_beakLateralSurfArea_overlap_byDesert.png")
+  boxplot(males$BEAKLATERALSURFACE_CALC~males$sppside,las=2,
+          xlab="",col=c(1,2,3,1,2,1,2,1,2,1,2,1,2,3,1,2,3,1,2,1,2,1,2),
+          ylab="Lateral Surface Area")
+  abline(v=c(3.5,5.5,7.5,9.5,11.5,14.5,17.5,19.5,21.5),col="lightgrey",lty=2)
+  dev.off()
+  
+  
+  
+  if(plotResid==T){
   par(mfrow=c(1,1),bg="black",col.axis="white",col.lab="white",
       col.main="white",col.sub="white",
       lwd=1,font.main=4,mar=c(2,2,2,1))
@@ -404,11 +461,6 @@ print("SUMMARIZE"); {
   summary(males$RES_BEAKAREAVOLUME_CALC)
   meanSAV = aggregate(males$RES_BEAKAREAVOLUME_CALC, by=list(males$SPP), FUN=mean)
   medSAV =  aggregate(males$RES_BEAKAREAVOLUME_CALC, by=list(males$SPP), FUN=median)
-  
-  chi = males[males$WHICH.SIDE.OF.CFB=="CHIHUAHUAN",]
-  son = males[males$WHICH.SIDE.OF.CFB=="SONORAN",]
-  unk = males[males$WHICH.SIDE.OF.CFB=="UNCLEAR",]
-  no_unk = males[males$WHICH.SIDE.OF.CFB!="UNCLEAR",]
   
   par(mfrow=c(1,1),bg="black",col.axis="white",col.lab="white",
       col.main="white",col.sub="white",col="white",
@@ -490,8 +542,9 @@ print("SUMMARIZE"); {
             las=2,boxwex=0.33,at=seq(0.5,10.5))
     dev.off()
   }
+  }
   
-  
+  if(generateData==T){
   for (spp in unique(males$SPP)) {
     for (des in unique(males$WHICH.SIDE.OF.CFB)) {
       print(paste(spp,des))
@@ -526,6 +579,7 @@ print("SUMMARIZE"); {
       }
     }
   }
+  }
   
   ## need to exit script and manually reformat this? 
   
@@ -536,46 +590,62 @@ print("SUMMARIZE"); {
 ## import data
 print("IMPORT"); {
   ## for background
-  Env = raster::stack(list.files(
-    path='/Users/kprovost/Dropbox (AMNH)/Classes/Spatial Bioinformatics/spatial_bioinformatics-master/ENM/wc2-5/',
-    pattern="\\.bil$",
-    full.names=T))
+  #Env = raster::stack(list.files(
+  #  path='/Users/kprovost/Dropbox (AMNH)/Classes/Spatial Bioinformatics/spatial_bioinformatics-master/ENM/wc2-5/',
+  #  pattern="\\.bil$",
+  #  full.names=T))
+  Env=raster("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/ECOLOGY/enm_layers/ENMS_multilayer.tif")
   #ext = raster::extent(c(-125,-60,10,50)) ## make sure this will play nice with your points
   ext = raster::extent(c(-118,-96,21,37)) ## make sure this will play nice with your points
   Env = raster::crop(Env, ext)
   bg = Env[[1]] ## just for plotting 
   
   path = "/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/measurements/"
-  fileprefix1 = "KLP_Master_Spreadsheet_Morphology_"
-  fileprefix2 = "aggregated datasets/KLP_Master_Spreadsheet_Morphology_"
-  date1 = "18_July_2019"
-  date2 = "18_July_2019"
+  # fileprefix1 = "KLP_Master_Spreadsheet_Morphology_"
+  # fileprefix2 = "aggregated datasets/KLP_Master_Spreadsheet_Morphology_"
+  # date1 = "19_July_2019"
+  # date2 = "19_July_2019"
+  # 
+  # ## agg refers to aggregated (as in, individual readings are merged)
+  # ## res refers to residuals in measurements after accounting for tarsus length
+  # notagg = read.csv(paste(path,fileprefix1,date2,".csv",sep=""))
+  # agg = read.csv(paste(path,fileprefix2,"AGGREGATED_",date2,".csv",sep=""))
+  # agg_res = read.csv(paste(path,fileprefix2,"AGGREGATED_residuals_",date2,".csv",sep=""))
+  # agg_log_res = read.csv(paste(path,fileprefix2,"AGGREGATED_LOG_residuals_",date2,".csv",sep=""))
+  # names(agg)[c(10,12)] = c("TAIL","LONG")
+  # 
+  # notagg_good = notagg[notagg$CONDITION=="",]
+  # notagg_good = notagg_good[!(notagg_good$AGE %in% c("JUV","?JUV")),]
+  # notagg_good_males = notagg_good[notagg_good$SEX %in% c("MALE","?MALE"),]
+  # 
+  # 
+  # agg_good = agg[agg$CONDITION=="",]
+  # agg_good = agg_good[!(agg_good$AGE %in% c("JUV","?JUV")),]
+  # agg_good_males = agg_good[agg_good$SEX %in% c("MALE","?MALE"),]
+  # 
+  # agg_res_good = agg_res[agg_res$CONDITION=="",]
+  # agg_res_good = agg_res_good[agg_res_good$AGE!="JUV" && agg_res_good$AGE!="?JUV",]
+  # agg_res_good_males = agg_res_good[agg_res_good$SEX=="MALE",]
+  # 
+  # agg_fus = agg_good_males[agg_good_males$SPP=="FUSCA",]
+  # agg_res_fus = agg_res_good_males[agg_res_good_males$SPP=="FUSCA",]
   
-  ## agg refers to aggregated (as in, individual readings are merged)
-  ## res refers to residuals in measurements after accounting for tarsus length
-  notagg = read.csv(paste(path,fileprefix1,date2,".csv",sep=""))
-  agg = read.csv(paste(path,fileprefix2,"AGGREGATED_",date2,".csv",sep=""))
-  agg_res = read.csv(paste(path,fileprefix2,"AGGREGATED_residuals_",date2,".csv",sep=""))
-  agg_log_res = read.csv(paste(path,fileprefix2,"AGGREGATED_LOG_residuals_",date2,".csv",sep=""))
-  names(agg)[c(10,12)] = c("TAIL","LONG")
+  datafile="/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/measurements/aggregated datasets/KLP_Master_Spreadsheet_Morphology_AGGREGATED_19_July_2019.csv"
+  df=read.table(datafile,header=T,stringsAsFactors = T,sep="\t",blank.lines.skip = F)
+  data=df[df$CATALOG.NUMBER!="",]
+  data=data[complete.cases(data$CATALOG.NUMBER),]
+  data=data[df$MEASUREMENT!="",]  
+  data=data[complete.cases(data$MEASUREMENT),]
+  ## get rid of ones without beak measurements
+  data=data[complete.cases(data$BILL.HEIGHT),]
+  ## get rid of the ones without tarsus measurements
+  data=data[complete.cases(data$TARSUS.LENGTH),]
+  ## there is now 1 without secondaries and 27 without tails
+  ## this dataset already has females and juvs removed
+  nobad = data[data$CONDITION=="",]
+  males=nobad
   
-  notagg_good = notagg[notagg$CONDITION=="",]
-  notagg_good = notagg_good[!(notagg_good$AGE %in% c("JUV","?JUV")),]
-  notagg_good_males = notagg_good[notagg_good$SEX %in% c("MALE","?MALE"),]
-  
-  
-  agg_good = agg[agg$CONDITION=="",]
-  agg_good = agg_good[!(agg_good$AGE %in% c("JUV","?JUV")),]
-  agg_good_males = agg_good[agg_good$SEX %in% c("MALE","?MALE"),]
-  
-  agg_res_good = agg_res[agg_res$CONDITION=="",]
-  agg_res_good = agg_res_good[agg_res_good$AGE!="JUV" && agg_res_good$AGE!="?JUV",]
-  agg_res_good_males = agg_res_good[agg_res_good$SEX=="MALE",]
-  
-  agg_fus = agg_good_males[agg_good_males$SPP=="FUSCA",]
-  agg_res_fus = agg_res_good_males[agg_res_good_males$SPP=="FUSCA",]
-  
-  pal = colorRampPalette(RColorBrewer::brewer.pal(11,"YlOrBr"))
+  pal = colorRampPalette(RColorBrewer::brewer.pal(9,"YlOrBr"))
   col <- pal(10)[as.numeric(cut(agg_fus$TARSUS.LENGTH,breaks = 10))]
   col[is.na(col)] = "black"
   #raster::plot(bg, col="grey",colNA="darkgrey",legend=F,main="TARSUS")
@@ -597,6 +667,7 @@ print("IMPORT"); {
 
 ## export imagery
 print("EXPORT"); {
+  agg=males
   pdf("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/Analyses and Images/SAMPLING/Tarsus_and_beakSAVR.pdf")
   par(mfrow=c(4,3),mar=c(1,1,1,1),ask=F)
   for(species in unique(agg$SPP)){
@@ -663,6 +734,7 @@ print("EXPORT"); {
 }; #dev.off()
 
 ## quick t-tests
+if(generateData==T){
 print("T TESTS"); {
   ## check if the value of corrected surface area to volume is different between deserts
   ## except crissals 
@@ -725,7 +797,9 @@ print("T TESTS"); {
   }
 }; dev.off()
 
+
 ## run a simple GLMM -- is longitude predictable?  
+
 print("GLMM"); {
   
   torun = agg[,c(4:10,14,24,37,41:47)]
@@ -936,7 +1010,10 @@ print("QUADRATIC"); {
   # dev.off()
 }; dev.off()
 
+
 ## get error between measurements
+
+if(generateData==T)
 print("ERROR"); {
   names(notagg)
   outfile = "/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/Analyses and Images/ERROR/Measurements_standard_error_within_individuals.temp"
@@ -995,7 +1072,7 @@ print("ERROR"); {
   hist(table2$STDEV,xlim=c(0,2))
   yyy = table2[which(table2$STDEV>=0.5),1:2]
 }; dev.off()
-
+  
 #### do a clustering analysis 
 print("CLUSTER"); {
   #tocluster = agg_good_males[,c(11:16,30,32:36)] ## not tail, too many missing
@@ -1082,8 +1159,10 @@ print("CLUSTER2"); {
   
   bestk=c(2,2,2,3,2,3,2,2,3,2)
 }; dev.off()
+}
 
 #### run dabest analysis 
+if(generateData==T){
 print("DABEST"); {
   
   ## CUSTOM PLOT DABEST FOR WHITE LINES
@@ -2074,15 +2153,21 @@ print("DABEST"); {
                                               c("BRU_SON","BRU_CHI"),
                                               c("MEL_SON","MEL_CHI"),
                                               c("NIT_SON","NIT_CHI"),
-                                              c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                              c("SIN_SON","SIN_CHI"),
+                                              c("BEL_SON","BEL_CHI"),
                                               c("CRI_SON","CRI_CHI"),
-                                              c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                              c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                              c("FUS_SON","FUS_CHI","FUS_UNC"))))
-      g = plot.custom.dabest(x=bav,palette=c("red","blue"),group.summaries=NULL,
-                             rawplot.ylabel="TAIL",
-                             #theme=theme_transparentwhite(),
-                             effsize.markersize=2)
+                                              c("CUR_SON","CUR_CHI"),
+                                              c("FLA_SON","FLA_CHI"),
+                                              c("FUS_SON","FUS_CHI"))))
+      g=plot(x=bav,group.summaries=NULL,
+             rawplot.ylabel="TAIL",
+             #theme=theme_transparentwhite(),
+             effsize.markersize=2)
+      
+      # g = plot.custom.dabest(x=bav,palette=c("red","blue"),group.summaries=NULL,
+      #                        rawplot.ylabel="TAIL",
+      #                        #theme=theme_transparentwhite(),
+      #                        effsize.markersize=2)
       print(g)
       ggsave("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/Analyses and Images/DABEST/DABEST_TAIL.png",
              g,bg="transparent",width=23,height=7,units="in")
@@ -2095,11 +2180,12 @@ print("DABEST"); {
                                                   c("BRU_SON","BRU_CHI"),
                                                   c("MEL_SON","MEL_CHI"),
                                                   c("NIT_SON","NIT_CHI"),
-                                                  c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                  c("SIN_SON","SIN_CHI"),
+                                                  c("BEL_SON","BEL_CHI"),
                                                   c("CRI_SON","CRI_CHI"),
-                                                  c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                  c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                  c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                  c("CUR_SON","CUR_CHI"),
+                                                  c("FLA_SON","FLA_CHI"),
+                                                  c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette="Paired",group.summaries=NULL,
                              rawplot.ylabel="RES_TAIL",
                              #theme=theme_transparentwhite(),
@@ -2117,11 +2203,12 @@ print("DABEST"); {
                                                              c("BRU_SON","BRU_CHI"),
                                                              c("MEL_SON","MEL_CHI"),
                                                              c("NIT_SON","NIT_CHI"),
-                                                             c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                             c("SIN_SON","SIN_CHI"),
+                                                             c("BEL_SON","BEL_CHI"),
                                                              c("CRI_SON","CRI_CHI"),
-                                                             c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                             c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                             c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                             c("CUR_SON","CUR_CHI"),
+                                                             c("FLA_SON","FLA_CHI"),
+                                                             c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette=c("red","blue"),group.summaries=NULL,
                              rawplot.ylabel="BEAKAREAVOLUME_CALC",
                              #theme=theme_transparentwhite(),
@@ -2138,11 +2225,11 @@ print("DABEST"); {
                                                                  c("BRU_SON","BRU_CHI"),
                                                                  c("MEL_SON","MEL_CHI"),
                                                                  c("NIT_SON","NIT_CHI"),
-                                                                 c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                                 c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                                                  c("CRI_SON","CRI_CHI"),
-                                                                 c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                                 c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                                 c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                                 c("CUR_SON","CUR_CHI"),
+                                                                 c("FLA_SON","FLA_CHI"),
+                                                                 c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette="Paired",group.summaries=NULL,
                              rawplot.ylabel="RES_BEAKAREAVOLUME_CALC",
                              #theme=theme_transparentwhite(),
@@ -2163,11 +2250,11 @@ print("DABEST"); {
                                              c("BRU_SON","BRU_CHI"),
                                              c("MEL_SON","MEL_CHI"),
                                              c("NIT_SON","NIT_CHI"),
-                                             c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                             c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                              c("CRI_SON","CRI_CHI"),
-                                             c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                             c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                             c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                             c("CUR_SON","CUR_CHI"),
+                                             c("FLA_SON","FLA_CHI"),
+                                             c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette=c("red","blue"),group.summaries=NULL,
                              rawplot.ylabel="LAT",
                              #theme=theme_transparentwhite(),
@@ -2187,11 +2274,11 @@ print("DABEST"); {
                                                                     c("BRU_SON","BRU_CHI"),
                                                                     c("MEL_SON","MEL_CHI"),
                                                                     c("NIT_SON","NIT_CHI"),
-                                                                    c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                                    c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                                                     c("CRI_SON","CRI_CHI"),
-                                                                    c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                                    c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                                    c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                                    c("CUR_SON","CUR_CHI"),
+                                                                    c("FLA_SON","FLA_CHI"),
+                                                                    c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette=c("red","blue"),group.summaries=NULL,
                              rawplot.ylabel="WING.LENGTH.TO.SECONDARIES",
                              #theme=theme_transparentwhite(),
@@ -2208,11 +2295,11 @@ print("DABEST"); {
                                                                         c("BRU_SON","BRU_CHI"),
                                                                         c("MEL_SON","MEL_CHI"),
                                                                         c("NIT_SON","NIT_CHI"),
-                                                                        c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                                        c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                                                         c("CRI_SON","CRI_CHI"),
-                                                                        c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                                        c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                                        c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                                        c("CUR_SON","CUR_CHI"),
+                                                                        c("FLA_SON","FLA_CHI"),
+                                                                        c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette="Paired",group.summaries=NULL,
                              rawplot.ylabel="RES_WING.LENGTH.TO.SECONDARIES",
                              #theme=theme_transparentwhite(),
@@ -2231,11 +2318,11 @@ print("DABEST"); {
                                                       c("BRU_SON","BRU_CHI"),
                                                       c("MEL_SON","MEL_CHI"),
                                                       c("NIT_SON","NIT_CHI"),
-                                                      c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                      c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                                       c("CRI_SON","CRI_CHI"),
-                                                      c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                      c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                      c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                      c("CUR_SON","CUR_CHI"),
+                                                      c("FLA_SON","FLA_CHI"),
+                                                      c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette=c("red","blue"),group.summaries=NULL,
                              rawplot.ylabel="BEAKVOL_CALC",
                              #theme=theme_transparentwhite(),
@@ -2252,11 +2339,11 @@ print("DABEST"); {
                                                           c("BRU_SON","BRU_CHI"),
                                                           c("MEL_SON","MEL_CHI"),
                                                           c("NIT_SON","NIT_CHI"),
-                                                          c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                          c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                                           c("CRI_SON","CRI_CHI"),
-                                                          c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                          c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                          c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                          c("CUR_SON","CUR_CHI"),
+                                                          c("FLA_SON","FLA_CHI"),
+                                                          c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette="Paired",group.summaries=NULL,
                              rawplot.ylabel="RES_BEAKVOL_CALC",
                              #theme=theme_transparentwhite(),
@@ -2275,11 +2362,11 @@ print("DABEST"); {
                                                        c("BRU_SON","BRU_CHI"),
                                                        c("MEL_SON","MEL_CHI"),
                                                        c("NIT_SON","NIT_CHI"),
-                                                       c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                       c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                                        c("CRI_SON","CRI_CHI"),
-                                                       c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                       c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                       c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                       c("CUR_SON","CUR_CHI"),
+                                                       c("FLA_SON","FLA_CHI"),
+                                                       c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette=c("red","blue"),group.summaries=NULL,
                              rawplot.ylabel="TARSUS.LENGTH",
                              #theme=theme_transparentwhite(),
@@ -2296,11 +2383,11 @@ print("DABEST"); {
                                                            c("BRU_SON","BRU_CHI"),
                                                            c("MEL_SON","MEL_CHI"),
                                                            c("NIT_SON","NIT_CHI"),
-                                                           c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                           c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                                            c("CRI_SON","CRI_CHI"),
-                                                           c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                           c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                           c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                           c("CUR_SON","CUR_CHI"),
+                                                           c("FLA_SON","FLA_CHI"),
+                                                           c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette="Paired",group.summaries=NULL,
                              rawplot.ylabel="RES_TARSUS.LENGTH",
                              #theme=theme_transparentwhite(),
@@ -2319,11 +2406,11 @@ print("DABEST"); {
                                                      c("BRU_SON","BRU_CHI"),
                                                      c("MEL_SON","MEL_CHI"),
                                                      c("NIT_SON","NIT_CHI"),
-                                                     c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                     c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                                      c("CRI_SON","CRI_CHI"),
-                                                     c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                     c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                     c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                     c("CUR_SON","CUR_CHI"),
+                                                     c("FLA_SON","FLA_CHI"),
+                                                     c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette=c("red","blue"),group.summaries=NULL,
                              rawplot.ylabel="BILL.LENGTH",
                              #theme=theme_transparentwhite(),
@@ -2340,11 +2427,11 @@ print("DABEST"); {
                                                          c("BRU_SON","BRU_CHI"),
                                                          c("MEL_SON","MEL_CHI"),
                                                          c("NIT_SON","NIT_CHI"),
-                                                         c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                         c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                                          c("CRI_SON","CRI_CHI"),
-                                                         c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                         c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                         c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                         c("CUR_SON","CUR_CHI"),
+                                                         c("FLA_SON","FLA_CHI"),
+                                                         c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette="Paired",group.summaries=NULL,
                              rawplot.ylabel="RES_BILL.LENGTH",
                              #theme=theme_transparentwhite(),
@@ -2365,11 +2452,11 @@ print("DABEST"); {
                                                                 c("BRU_SON","BRU_CHI"),
                                                                 c("MEL_SON","MEL_CHI"),
                                                                 c("NIT_SON","NIT_CHI"),
-                                                                c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                                c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                                                 c("CRI_SON","CRI_CHI"),
-                                                                c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                                c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                                c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                                c("CUR_SON","CUR_CHI"),
+                                                                c("FLA_SON","FLA_CHI"),
+                                                                c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette=c("red","blue"),group.summaries=NULL,
                              rawplot.ylabel="BEAKTOTAREAVOLUME_CALC",
                              #theme=theme_transparentwhite(),
@@ -2386,11 +2473,11 @@ print("DABEST"); {
                                                                     c("BRU_SON","BRU_CHI"),
                                                                     c("MEL_SON","MEL_CHI"),
                                                                     c("NIT_SON","NIT_CHI"),
-                                                                    c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                                    c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                                                     c("CRI_SON","CRI_CHI"),
-                                                                    c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                                    c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                                    c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                                    c("CUR_SON","CUR_CHI"),
+                                                                    c("FLA_SON","FLA_CHI"),
+                                                                    c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette="Paired",group.summaries=NULL,
                              rawplot.ylabel="RES_BEAKTOTAREAVOLUME_CALC",
                              #theme=theme_transparentwhite(),
@@ -2410,11 +2497,11 @@ print("DABEST"); {
                                                          c("BRU_SON","BRU_CHI"),
                                                          c("MEL_SON","MEL_CHI"),
                                                          c("NIT_SON","NIT_CHI"),
-                                                         c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                         c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                                          c("CRI_SON","CRI_CHI"),
-                                                         c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                         c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                         c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                         c("CUR_SON","CUR_CHI"),
+                                                         c("FLA_SON","FLA_CHI"),
+                                                         c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette=c("red","blue"),group.summaries=NULL,
                              rawplot.ylabel="KIPPSINDEX_CALC",
                              #theme=theme_transparentwhite(),
@@ -2431,11 +2518,11 @@ print("DABEST"); {
                                                              c("BRU_SON","BRU_CHI"),
                                                              c("MEL_SON","MEL_CHI"),
                                                              c("NIT_SON","NIT_CHI"),
-                                                             c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                             c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                                              c("CRI_SON","CRI_CHI"),
-                                                             c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                             c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                             c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                             c("CUR_SON","CUR_CHI"),
+                                                             c("FLA_SON","FLA_CHI"),
+                                                             c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette="Paired",group.summaries=NULL,
                              rawplot.ylabel="RES_KIPPSINDEX_CALC",
                              #theme=theme_transparentwhite(),
@@ -2454,11 +2541,11 @@ print("DABEST"); {
                                                                   c("BRU_SON","BRU_CHI"),
                                                                   c("MEL_SON","MEL_CHI"),
                                                                   c("NIT_SON","NIT_CHI"),
-                                                                  c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                                  c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                                                   c("CRI_SON","CRI_CHI"),
-                                                                  c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                                  c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                                  c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                                  c("CUR_SON","CUR_CHI"),
+                                                                  c("FLA_SON","FLA_CHI"),
+                                                                  c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette=c("red","blue"),group.summaries=NULL,
                              rawplot.ylabel="WING.LENGTH.TO.PRIMARIES",
                              #theme=theme_transparentwhite(),
@@ -2475,11 +2562,11 @@ print("DABEST"); {
                                                                       c("BRU_SON","BRU_CHI"),
                                                                       c("MEL_SON","MEL_CHI"),
                                                                       c("NIT_SON","NIT_CHI"),
-                                                                      c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                                      c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                                                       c("CRI_SON","CRI_CHI"),
-                                                                      c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                                      c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                                      c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                                      c("CUR_SON","CUR_CHI"),
+                                                                      c("FLA_SON","FLA_CHI"),
+                                                                      c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette="Paired",group.summaries=NULL,
                              rawplot.ylabel="RES_WING.LENGTH.TO.PRIMARIES",
                              #theme=theme_transparentwhite(),
@@ -2497,11 +2584,11 @@ print("DABEST"); {
                                               c("BRU_SON","BRU_CHI"),
                                               c("MEL_SON","MEL_CHI"),
                                               c("NIT_SON","NIT_CHI"),
-                                              c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                              c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                               c("CRI_SON","CRI_CHI"),
-                                              c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                              c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                              c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                              c("CUR_SON","CUR_CHI"),
+                                              c("FLA_SON","FLA_CHI"),
+                                              c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette=c("red","blue"),group.summaries=NULL,
                              rawplot.ylabel="LONG",
                              #theme=theme_transparentwhite(),
@@ -2524,11 +2611,11 @@ print("DABEST"); {
                                                                  c("BRU_SON","BRU_CHI"),
                                                                  c("MEL_SON","MEL_CHI"),
                                                                  c("NIT_SON","NIT_CHI"),
-                                                                 c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                                 c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                                                  c("CRI_SON","CRI_CHI"),
-                                                                 c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                                 c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                                 c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                                 c("CUR_SON","CUR_CHI"),
+                                                                 c("FLA_SON","FLA_CHI"),
+                                                                 c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette=c("red","blue"),group.summaries=NULL,
                              rawplot.ylabel="BEAKLATERALSURFACE_CALC",
                              #theme=theme_transparentwhite(),
@@ -2545,11 +2632,11 @@ print("DABEST"); {
                                                                      c("BRU_SON","BRU_CHI"),
                                                                      c("MEL_SON","MEL_CHI"),
                                                                      c("NIT_SON","NIT_CHI"),
-                                                                     c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                                     c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                                                      c("CRI_SON","CRI_CHI"),
-                                                                     c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                                     c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                                     c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                                     c("CUR_SON","CUR_CHI"),
+                                                                     c("FLA_SON","FLA_CHI"),
+                                                                     c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette="Paired",group.summaries=NULL,
                              rawplot.ylabel="RES_BEAKLATERALSURFACE_CALC",
                              #theme=theme_transparentwhite(),
@@ -2567,11 +2654,11 @@ print("DABEST"); {
                                                      c("BRU_SON","BRU_CHI"),
                                                      c("MEL_SON","MEL_CHI"),
                                                      c("NIT_SON","NIT_CHI"),
-                                                     c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                     c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                                      c("CRI_SON","CRI_CHI"),
-                                                     c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                     c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                     c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                     c("CUR_SON","CUR_CHI"),
+                                                     c("FLA_SON","FLA_CHI"),
+                                                     c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette=c("red","blue"),group.summaries=NULL,
                              rawplot.ylabel="BILL.HEIGHT",
                              #theme=theme_transparentwhite(),
@@ -2588,11 +2675,11 @@ print("DABEST"); {
                                                          c("BRU_SON","BRU_CHI"),
                                                          c("MEL_SON","MEL_CHI"),
                                                          c("NIT_SON","NIT_CHI"),
-                                                         c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                         c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                                          c("CRI_SON","CRI_CHI"),
-                                                         c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                         c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                         c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                         c("CUR_SON","CUR_CHI"),
+                                                         c("FLA_SON","FLA_CHI"),
+                                                         c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette="Paired",group.summaries=NULL,
                              rawplot.ylabel="RES_BILL.HEIGHT",
                              #theme=theme_transparentwhite(),
@@ -2611,11 +2698,11 @@ print("DABEST"); {
                                                     c("BRU_SON","BRU_CHI"),
                                                     c("MEL_SON","MEL_CHI"),
                                                     c("NIT_SON","NIT_CHI"),
-                                                    c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                    c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                                     c("CRI_SON","CRI_CHI"),
-                                                    c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                    c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                    c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                    c("CUR_SON","CUR_CHI"),
+                                                    c("FLA_SON","FLA_CHI"),
+                                                    c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette=c("red","blue"),group.summaries=NULL,
                              rawplot.ylabel="BILL.WIDTH",
                              #theme=theme_transparentwhite(),
@@ -2632,11 +2719,11 @@ print("DABEST"); {
                                                         c("BRU_SON","BRU_CHI"),
                                                         c("MEL_SON","MEL_CHI"),
                                                         c("NIT_SON","NIT_CHI"),
-                                                        c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                        c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                                         c("CRI_SON","CRI_CHI"),
-                                                        c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                        c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                        c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                        c("CUR_SON","CUR_CHI"),
+                                                        c("FLA_SON","FLA_CHI"),
+                                                        c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette="Paired",group.summaries=NULL,
                              rawplot.ylabel="RES_BILL.WIDTH",
                              #theme=theme_transparentwhite(),
@@ -2654,11 +2741,11 @@ print("DABEST"); {
                                                                c("BRU_SON","BRU_CHI"),
                                                                c("MEL_SON","MEL_CHI"),
                                                                c("NIT_SON","NIT_CHI"),
-                                                               c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                               c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                                                c("CRI_SON","CRI_CHI"),
-                                                               c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                               c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                               c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                               c("CUR_SON","CUR_CHI"),
+                                                               c("FLA_SON","FLA_CHI"),
+                                                               c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette=c("red","blue"),group.summaries=NULL,
                              rawplot.ylabel="BEAKTOTALSURFACE_CALC",
                              #theme=theme_transparentwhite(),
@@ -2675,11 +2762,11 @@ print("DABEST"); {
                                                                    c("BRU_SON","BRU_CHI"),
                                                                    c("MEL_SON","MEL_CHI"),
                                                                    c("NIT_SON","NIT_CHI"),
-                                                                   c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                                   c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                                                    c("CRI_SON","CRI_CHI"),
-                                                                   c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                                   c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                                   c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                                   c("CUR_SON","CUR_CHI"),
+                                                                   c("FLA_SON","FLA_CHI"),
+                                                                   c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette="Paired",group.summaries=NULL,
                              rawplot.ylabel="RES_BEAKTOTALSURFACE_CALC",
                              #theme=theme_transparentwhite(),
@@ -2698,11 +2785,11 @@ print("DABEST"); {
                                                            c("BRU_SON","BRU_CHI"),
                                                            c("MEL_SON","MEL_CHI"),
                                                            c("NIT_SON","NIT_CHI"),
-                                                           c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                           c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                                            c("CRI_SON","CRI_CHI"),
-                                                           c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                           c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                           c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                           c("CUR_SON","CUR_CHI"),
+                                                           c("FLA_SON","FLA_CHI"),
+                                                           c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette=c("red","blue"),group.summaries=NULL,
                              rawplot.ylabel="BEAKBASEAREA_CALC",
                              #theme=theme_transparentwhite(),
@@ -2719,11 +2806,11 @@ print("DABEST"); {
                                                                c("BRU_SON","BRU_CHI"),
                                                                c("MEL_SON","MEL_CHI"),
                                                                c("NIT_SON","NIT_CHI"),
-                                                               c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                               c("SIN_SON","SIN_CHI"),c("BEL_SON","BEL_CHI"),
                                                                c("CRI_SON","CRI_CHI"),
-                                                               c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                               c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                               c("FUS_SON","FUS_CHI","FUS_UNC"))))
+                                                               c("CUR_SON","CUR_CHI"),
+                                                               c("FLA_SON","FLA_CHI"),
+                                                               c("FUS_SON","FUS_CHI"))))
       g = plot.custom.dabest(x=bav,palette="Paired",group.summaries=NULL,
                              rawplot.ylabel="RES_BEAKBASEAREA_CALC",
                              #theme=theme_transparentwhite(),
@@ -2875,21 +2962,33 @@ print("MEANS"); {
               x$BEAKTOTAREAVOLUME_CALC + x$BEAKVOL_CALC)
   summary(mod)
 }
+}
 
 ## perform a pca 
 print("PCA"); {
   summary(agg)
-  forpca_full = (agg[,c(4:10,41:47,24,37,21,2,11:12)])
-  forpca_notail = (agg[,c(4:9,41:47,24,37,21,2,11:12)])
-  forpca_notailsec = (agg[,c(4:8,42:47,24,37,21,2,11:12)])
   
-  forpca_full = forpca_full[complete.cases(forpca_full),]
-  forpca_notail = forpca_notail[complete.cases(forpca_notail),]
-  forpca_notailsec = forpca_notailsec[complete.cases(forpca_notailsec),]
+  keepcols=c("BEAKAREAVOLUME_CALC","BEAKBASEAREA_CALC","BEAKLATERALSURFACE_CALC",
+             "BEAKTOTALSURFACE_CALC","BEAKTOTAREAVOLUME_CALC","BEAKVOL_CALC",
+             "BILL.HEIGHT","BILL.LENGTH","BILL.WIDTH","KIPPSINDEX_CALC","TAIL",
+             "TARSUS.LENGTH","WING.LENGTH.TO.PRIMARIES","WING.LENGTH.TO.SECONDARIES")
   
-  pca_full = prcomp(forpca_full[,1:14],scale=T,center=T)
-  pca_notail = prcomp(forpca_notail[,1:13],scale=T,center=T)
-  pca_notailsec = prcomp(forpca_notailsec[,1:11],scale=T,center=T)
+  metacols=c("AGE","BAD.MEASUREMENT","CATALOG.NUMBER","CONDITION","COUNTRY","COUNTY",
+             "DATE","GENETIC.SIDE","GENETIC.SPLIT","GENUS","GEOREF.BY","LAT","LOCALITY",
+             "LOCALITY2","LONG","MEASUREMENT","MEASURER","NOTES","NUM2","OLDCAT","SEQUENCED.",
+             "SEX","SPECIES","SPP","STATE","STRUCTURE","SUBSPP","WHICH.SIDE.OF.CFB")
+  
+  forpca_full = (agg[,c(keepcols,metacols)])
+  forpca_notail = forpca_full[,-(which(colnames(forpca_full)=="TAIL"))]
+  forpca_notailsec = forpca_notail[,-(which(colnames(forpca_notail)=="WING.LENGTH.TO.SECONDARIES"))]
+  
+  forpca_full = forpca_full[complete.cases(forpca_full[,keepcols]),]
+  forpca_notail = forpca_notail[complete.cases(forpca_notail[,keepcols[keepcols!="TAIL"]]),]
+  forpca_notailsec = forpca_notailsec[complete.cases(forpca_notailsec[,keepcols!="TAIL" && keepcols!="WING.LENGTH.TO.SECONDARIES"]),]
+  
+  pca_full = prcomp(forpca_full[,-(which(colnames(forpca_full) %in% metacols))],scale=T,center=T)
+  pca_notail = prcomp(forpca_notail[,-(which(colnames(forpca_notail) %in% metacols))],scale=T,center=T)
+  pca_notailsec = prcomp(forpca_notailsec[,-(which(colnames(forpca_notailsec) %in% metacols))],scale=T,center=T)
   
   summary(pca_full)
   summary(pca_notail)
@@ -2899,42 +2998,51 @@ print("PCA"); {
   axes_notail = cbind(pca_notail$x,forpca_notail)
   axes_notailsec = cbind(pca_notailsec$x,forpca_notailsec)
 
-  write.csv(axes_full,"/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/measurements/aggregated datasets/KLP_Master_Spreadsheet_Morphology_AGGREGATED_19_July_2019_PCASCORES_FULL.csv",
+  write.csv(axes_full,"/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/measurements/aggregated datasets/KLP_Master_Spreadsheet_Morphology_AGGREGATED_10_April_2020_PCASCORES_FULL.csv",
             row.names = F)
-  write.csv(axes_notail,"/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/measurements/aggregated datasets/KLP_Master_Spreadsheet_Morphology_AGGREGATED_19_July_2019_PCASCORES_NOTAIL.csv",
+  write.csv(axes_notail,"/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/measurements/aggregated datasets/KLP_Master_Spreadsheet_Morphology_AGGREGATED_10_April_2020_PCASCORES_NOTAIL.csv",
             row.names = F)
-  write.csv(axes_notailsec,"/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/measurements/aggregated datasets/KLP_Master_Spreadsheet_Morphology_AGGREGATED_19_July_2019_PCASCORES_NOTAILSEC.csv",
+  write.csv(axes_notailsec,"/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/measurements/aggregated datasets/KLP_Master_Spreadsheet_Morphology_AGGREGATED_10_April_2020_PCASCORES_NOTAILSEC.csv",
             row.names = F)
   
   
   ## DO DABESTR
   temp = axes_full
   temp$GROUP = paste(substr(temp$SPP,1,3),substr(temp$WHICH.SIDE.OF.CFB,1,3),sep="_")
-  temp = temp[,c("GROUP","PC1")]
+  color=as.numeric(as.factor(temp$WHICH.SIDE.OF.CFB))
+  temp$COLOR=color
+  temp = temp[,c("GROUP","PC1","WHICH.SIDE.OF.CFB")]
+  color=color[complete.cases(temp)]
   temp = temp[complete.cases(temp), ]
-  #pdf(paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/DABEST_","RES_PC1",".pdf",sep=""))
+  
+  
+    #pdf(paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/DABEST_","RES_PC1",".pdf",sep=""))
   #par(mfrow=c(2,5))
   bav = dabestr::dabest(temp,GROUP,PC1, idx=(list(c("BIL_SON","BIL_CHI"),
                                                   c("BRU_SON","BRU_CHI"),
                                                   c("MEL_SON","MEL_CHI"),
                                                   c("NIT_SON","NIT_CHI"),
                                                   c("SIN_SON","SIN_CHI"),
-                                                  c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                  c("BEL_SON","BEL_CHI"),
                                                   c("CRI_SON","CRI_CHI"),
-                                                  c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                  c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                  c("FUS_SON","FUS_CHI","FUS_UNC"))))
-  g = plot.custom.dabest(x=bav,palette="Paired",group.summaries=NULL,
-                         rawplot.ylabel="PC1",
+                                                  c("CUR_SON","CUR_CHI"),
+                                                  c("FLA_SON","FLA_CHI"),
+                                                  c("FUS_SON","FUS_CHI"))))
+  # g = plot.custom.dabest(x=bav,palette="Paired",group.summaries=NULL,
+  #                        rawplot.ylabel="PC1",
+  #                        #theme=theme_transparentwhite(),
+  #                        effsize.markersize=2)
+  g = plot(x=bav,palette="Paired",group.summaries=NULL,
+                         rawplot.ylabel="PC1",color.column="GROUP",
                          #theme=theme_transparentwhite(),
                          effsize.markersize=2)
-  print(g)
+  #print(g)
   ggsave("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/Analyses and Images/PCA/DABEST_PCA_PC1.png",
-         g,bg="transparent",width=23,height=7,units="in")
+         g,bg="transparent",width=19,height=5,units="in")
   
   temp = axes_full
   temp$GROUP = paste(substr(temp$SPP,1,3),substr(temp$WHICH.SIDE.OF.CFB,1,3),sep="_")
-  temp = temp[,c("GROUP","PC2")]
+  temp = temp[,c("GROUP","PC2","WHICH.SIDE.OF.CFB")]
   temp = temp[complete.cases(temp), ]
   #pdf(paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/DABEST_","RES_PC2",".pdf",sep=""))
   #par(mfrow=c(2,5))
@@ -2943,25 +3051,25 @@ print("PCA"); {
                                                   c("MEL_SON","MEL_CHI"),
                                                   c("NIT_SON","NIT_CHI"),
                                                   c("SIN_SON","SIN_CHI"),
-                                                  c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                  c("BEL_SON","BEL_CHI"),
                                                   c("CRI_SON","CRI_CHI"),
-                                                  c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                  c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                  c("FUS_SON","FUS_CHI","FUS_UNC"))))
-  g = plot.custom.dabest(x=bav,palette="Paired",group.summaries=NULL,
-                         rawplot.ylabel="PC2",
+                                                  c("CUR_SON","CUR_CHI"),
+                                                  c("FLA_SON","FLA_CHI"),
+                                                  c("FUS_SON","FUS_CHI"))))
+  g = plot(x=bav,palette="Paired",group.summaries=NULL,
+                         rawplot.ylabel="PC2",color.column = "GROUP",
                          #theme=theme_transparentwhite(),
                          effsize.markersize=2)
-  print(g)
+  #print(g)
   ggsave("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/Analyses and Images/PCA/DABEST_PCA_PC2.png",
-         g,bg="transparent",width=23,height=7,units="in")
+         g,bg="transparent",width=19,height=5,units="in")
   
   
   
   
   temp = axes_full
   temp$GROUP = paste(substr(temp$SPP,1,3),substr(temp$WHICH.SIDE.OF.CFB,1,3),sep="_")
-  temp = temp[,c("GROUP","PC3")]
+  temp = temp[,c("GROUP","PC3","WHICH.SIDE.OF.CFB")]
   temp = temp[complete.cases(temp), ]
   #pdf(paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/DABEST_","RES_PC3",".pdf",sep=""))
   #par(mfrow=c(2,5))
@@ -2970,25 +3078,90 @@ print("PCA"); {
                                                   c("MEL_SON","MEL_CHI"),
                                                   c("NIT_SON","NIT_CHI"),
                                                   c("SIN_SON","SIN_CHI"),
-                                                  c("BEL_SON","BEL_CHI","BEL_UNC"),
+                                                  c("BEL_SON","BEL_CHI"),
                                                   c("CRI_SON","CRI_CHI"),
-                                                  c("CUR_SON","CUR_CHI","CUR_UNC"),
-                                                  c("FLA_SON","FLA_CHI","FLA_UNC"),
-                                                  c("FUS_SON","FUS_CHI","FUS_UNC"))))
-  g = plot.custom.dabest(x=bav,palette="Paired",group.summaries=NULL,
-                         rawplot.ylabel="PC3",
+                                                  c("CUR_SON","CUR_CHI"),
+                                                  c("FLA_SON","FLA_CHI"),
+                                                  c("FUS_SON","FUS_CHI"))))
+  g = plot(x=bav,palette="Paired",group.summaries=NULL,
+                         rawplot.ylabel="PC3",color.column = "GROUP",
                          #theme=theme_transparentwhite(),
                          effsize.markersize=2)
-  print(g)
+  #print(g)
   ggsave("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/Analyses and Images/PCA/DABEST_PCA_PC3.png",
-         g,bg="transparent",width=23,height=7,units="in")
+         g,bg="transparent",width=19,height=5,units="in")
+  
+  pc1quan=quantile(axes_full$PC1,c(0,1))
+  pc2quan=quantile(axes_full$PC2,c(0,1))
+  pc3quan=quantile(axes_full$PC3,c(0,1))
+  pc1diflim=c(pc1quan[1]-pc1quan[2],pc1quan[2]-pc1quan[1])
+  pc2diflim=c(pc2quan[1]-pc2quan[2],pc2quan[2]-pc2quan[1])
+  pc3diflim=c(pc3quan[1]-pc3quan[2],pc3quan[2]-pc3quan[1])
+  
+  for (species_index in 1:length(unique(axes_full$SPP))){
+    spp=unique(axes_full$SPP)[species_index]
+    print(as.character(spp))
+    
+    
+    temp = axes_full[axes_full$SPP==spp,]
+    temp$WHICH.SIDE.OF.CFB = substr(temp$WHICH.SIDE.OF.CFB,1,3)
+    temp = temp[,c("WHICH.SIDE.OF.CFB","PC1","PC2","PC3")]
+    temp = temp[complete.cases(temp), ]
+    
+    
+    dif1=quantile(temp$PC1,1)-quantile(temp$PC1,0)
+    dif1=unique(as.numeric(c(-1*abs(dif1),abs(dif1))))
+    
+    #pdf(paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/DABEST_","RES_PC3",".pdf",sep=""))
+    #par(mfrow=c(2,5))
+    
+    quan1=c(quantile(temp$PC1,0)-1,quantile(temp$PC1,1)+1)
+    bav1 = dabestr::dabest(temp,WHICH.SIDE.OF.CFB,PC1, 
+                           idx=(list(unique(temp$WHICH.SIDE.OF.CFB))))
+    g1 = plot(x=bav1,palette="Paired",group.summaries=NULL,
+              rawplot.ylabel="PC1",rawplot.ylim=quan1,
+              # rawplot.names=c("Chihuahuan","Sonoran"),
+              effsize.ylim=dif1,
+              float.contrast=F,
+              effsize.markersize=2)
+    #print(g)
+    ggsave(paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/Analyses and Images/PCA/DABEST_PCA_PC1_",spp,".png",sep=""),
+           g1,bg="transparent",width=4,height=4,units="in")
+    
+    dif2=quantile(temp$PC2,1)-quantile(temp$PC2,0)
+    dif2=unique(as.numeric(c(-1*abs(dif2),abs(dif2))))
+    quan2=c(quantile(temp$PC2,0)-1,quantile(temp$PC2,1)+1)
+    bav2 = dabestr::dabest(temp,WHICH.SIDE.OF.CFB,PC2, idx=(list(unique(temp$WHICH.SIDE.OF.CFB))))
+    g2 = plot(x=bav2,palette="Paired",group.summaries=NULL,
+              rawplot.ylabel="PC2",rawplot.ylim=quan2,
+              # rawplot.names=c("Chihuahuan","Sonoran"),
+              effsize.ylim=dif2,
+              float.contrast=F,
+              effsize.markersize=2)
+    #print(g)
+    ggsave(paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/Analyses and Images/PCA/DABEST_PCA_PC2_",spp,".png",sep=""),
+           g2,bg="transparent",width=4,height=4,units="in")
+    
+    dif3=quantile(temp$PC3,1)-quantile(temp$PC3,0)
+    dif3=unique(as.numeric(c(-1*abs(dif3),abs(dif3))))
+    quan3=c(quantile(temp$PC3,0)-1,quantile(temp$PC3,1)+1)
+    bav3 = dabestr::dabest(temp,WHICH.SIDE.OF.CFB,PC3, idx=(list(unique(temp$WHICH.SIDE.OF.CFB))))
+    g3 = plot(x=bav3,palette="Paired",group.summaries=NULL,
+             rawplot.ylabel="PC3",rawplot.ylim=quan3,
+            # rawplot.names=c("Chihuahuan","Sonoran"),
+             effsize.ylim=dif3,
+             float.contrast=F,
+             effsize.markersize=2)
+    #print(g)
+    ggsave(paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/Analyses and Images/PCA/DABEST_PCA_PC3_",spp,".png",sep=""),
+           g3,bg="transparent",width=4,height=4,units="in")
+    
+  }
   
   
   
-  
-  
-  
-  
+  ## WHITE
+  {
   {
     palette(c("white","red","orange","goldenrod","green","blue",
               "cyan","magenta","brown","pink","lightblue"))
@@ -3023,10 +3196,9 @@ print("PCA"); {
                   rect= element_rect(color="white"),
                   text=element_text(color="white"))
     g = g + theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
-    #print(g)
+    print(g)
   }
   ggsave("Analyses and Images/PCA/pca_axis_loadings_P1P2.png", g, bg = "transparent")
-  
   {
     palette(c("white","red","orange","goldenrod","green","blue",
               "cyan","magenta","brown","pink","lightblue"))
@@ -3064,7 +3236,6 @@ print("PCA"); {
     #print(g)
   }
   ggsave("Analyses and Images/PCA/pca_axis_loadings_P1P3.png", g, bg = "transparent")
-  
   {
     palette(c("white","red","orange","goldenrod","green","blue",
               "cyan","magenta","brown","pink","lightblue"))
@@ -3102,7 +3273,6 @@ print("PCA"); {
     #print(g)
   }
   ggsave("Analyses and Images/PCA/pca_axis_loadings_P2P3.png", g, bg = "transparent")
-  
   {
     palette(c("white","red","orange","goldenrod","green","blue",
               "cyan","magenta","brown","pink","lightblue"))
@@ -3150,7 +3320,6 @@ print("PCA"); {
     #print(g)
   }
   ggsave("Analyses and Images/PCA/morphology_pca_PC1PC2.png", g, bg = "transparent")
-  
   {
     palette(c("white","red","orange","goldenrod","green","blue",
               "cyan","magenta","brown","pink","lightblue"))
@@ -3198,7 +3367,6 @@ print("PCA"); {
     #print(g)
   }
   ggsave("Analyses and Images/PCA/morphology_pca_PC1PC3.png", g, bg = "transparent")
-  
   {
     palette(c("white","red","orange","goldenrod","green","blue",
               "cyan","magenta","brown","pink","lightblue"))
@@ -3246,7 +3414,273 @@ print("PCA"); {
     #print(g)
   }
   ggsave("Analyses and Images/PCA/morphology_pca_PC2PC3.png", g, bg = "transparent")
+  }
   
+  ## BLACK
+  {
+    {
+      palette(c("black","red","orange","goldenrod","green","blue",
+                "cyan","magenta","brown","pink","lightblue"))
+      par(
+        bg = NA,
+        col.axis = "black",
+        fg = "black",
+        col.lab = "black",
+        col.main = "black"
+      )
+      g <- ggbiplot(pca_full, obs.scale = 1, var.scale = 1, choices = c(1,2),
+                    groups = axes_full$SPP, ellipse = F, 
+                    circle = F,var.axes = T, alpha=0,varname.size=1,
+                    arrow.color="black")
+      
+      g = g + ggtitle("")
+      g = g + theme(plot.title = element_text(color="black", face="italic",hjust=0))
+      g <- g + theme(legend.direction = 'horizontal', 
+                     legend.position = 'bottom',
+                     legend.background = element_rect(fill = "white", colour = NA),
+                     legend.text = element_text(colour = 'white'),
+                     legend.key = element_rect(fill="white",colour=NA))
+      g = g + theme(panel.background = element_rect(fill = "lightgrey", colour = NA))
+      g = g + theme(plot.background = element_rect(fill = "grey", colour = NA),
+                    panel.grid = element_blank())
+      g = g + theme(axis.text.x=element_text(colour="black"),
+                    axis.text.y=element_text(colour="black"))
+      g = g + theme(plot.title = element_text(color="black"),
+                    axis.title.x = element_text(color="black"),
+                    axis.title.y = element_text(color="black"))
+      g = g + theme(line = element_line(color="black"),
+                    rect= element_rect(color="black"),
+                    text=element_text(color="black"))
+      g = g + theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
+      #print(g)
+    }
+    ggsave("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/Analyses and Images/PCA/pca_axis_loadings_P1P2_black.png", 
+           g, bg = "transparent",width=7,height=5,units = "in")
+    {
+      palette(c("black","red","orange","goldenrod","green","blue",
+                "cyan","magenta","brown","pink","lightblue"))
+      par(
+        bg = NA,
+        col.axis = "black",
+        fg = "black",
+        col.lab = "black",
+        col.main = "black"
+      )
+      g <- ggbiplot(pca_full, obs.scale = 1, var.scale = 1, choices = c(1,3),
+                    groups = axes_full$SPP, ellipse = F, 
+                    circle = F,var.axes = T, alpha=0,varname.size=1,
+                    arrow.color="black")
+      
+      g = g + ggtitle("")
+      g = g + theme(plot.title = element_text(color="black", face="italic",hjust=0))
+      g <- g + theme(legend.direction = 'horizontal', 
+                     legend.position = 'bottom',
+                     legend.background = element_rect(fill = "white", colour = NA),
+                     legend.text = element_text(colour = 'white'),
+                     legend.key = element_rect(fill="white",colour=NA))
+      g = g + theme(panel.background = element_rect(fill = "lightgrey", colour = NA))
+      g = g + theme(plot.background = element_rect(fill = "grey", colour = NA),
+                    panel.grid = element_blank())
+      g = g + theme(axis.text.x=element_text(colour="black"),
+                    axis.text.y=element_text(colour="black"))
+      g = g + theme(plot.title = element_text(color="black"),
+                    axis.title.x = element_text(color="black"),
+                    axis.title.y = element_text(color="black"))
+      g = g + theme(line = element_line(color="black"),
+                    rect= element_rect(color="black"),
+                    text=element_text(color="black"))
+      g = g + theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
+      #print(g)
+    }
+    ggsave("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/Analyses and Images/PCA/pca_axis_loadings_P1P3_black.png", 
+           g, bg = "transparent",width=7,height=5,units = "in")
+    {
+      palette(c("black","red","orange","goldenrod","green","blue",
+                "cyan","magenta","brown","pink","lightblue"))
+      par(
+        bg = NA,
+        col.axis = "black",
+        fg = "black",
+        col.lab = "black",
+        col.main = "black"
+      )
+      g <- ggbiplot(pca_full, obs.scale = 1, var.scale = 1, choices = c(2,3),
+                    groups = axes_full$SPP, ellipse = F, 
+                    circle = F,var.axes = T, alpha=0,varname.size=1,
+                    arrow.color="black")
+      
+      g = g + ggtitle("")
+      g = g + theme(plot.title = element_text(color="black", face="italic",hjust=0))
+      g <- g + theme(legend.direction = 'horizontal', 
+                     legend.position = 'bottom',
+                     legend.background = element_rect(fill = "white", colour = NA),
+                     legend.text = element_text(colour = 'white'),
+                     legend.key = element_rect(fill="white",colour=NA))
+      g = g + theme(panel.background = element_rect(fill = "lightgrey", colour = NA))
+      g = g + theme(plot.background = element_rect(fill = "grey", colour = NA),
+                    panel.grid = element_blank())
+      g = g + theme(axis.text.x=element_text(colour="black"),
+                    axis.text.y=element_text(colour="black"))
+      g = g + theme(plot.title = element_text(color="black"),
+                    axis.title.x = element_text(color="black"),
+                    axis.title.y = element_text(color="black"))
+      g = g + theme(line = element_line(color="black"),
+                    rect= element_rect(color="black"),
+                    text=element_text(color="black"))
+      g = g + theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
+      print(g)
+    }
+    ggsave("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/Analyses and Images/PCA/pca_axis_loadings_P2P3_black.png", 
+           g, bg = "transparent",width=7,height=5,units = "in")
+    {
+      palette(c("black","red","orange","goldenrod","green","blue",
+                "cyan","magenta","brown","pink","lightblue"))
+      par(
+        bg = NA,
+        col.axis = "black",
+        fg = "black",
+        col.lab = "black",
+        col.main = "black"
+      )
+      g <- ggbiplot(pca_full, choices = c(1,2), obs.scale = 1, var.scale = 1, 
+                    groups = axes_full$SPP, ellipse = T, 
+                    circle = F,var.axes = F, alpha=0)
+      
+      g = g +
+        scale_color_manual(name="", values=c("red","orange","goldenrod","green","cyan",
+                                             "blue","purple","magenta","brown","lightblue",
+                                             "pink")) +
+        #scale_color_manual(name="", values=c("cyan", "black","red","cyan","cyan",
+        #                                     "red","cyan","red","black","black","black")) +
+        #scale_color_manual(name="", values=c("cyan", "red","black","cyan","black",
+        #                                     "cyan","red","cyan","cyan","red","black")) +
+        scale_shape_manual(name="", values=c(1,2,3,4,5,6,7,8,9,10,11)) +
+        geom_point(aes(colour=axes_full$SPP, shape=axes_full$SPP))
+      g = g + ggtitle("")
+      g = g + theme(plot.title = element_text(color="black", face="italic",hjust=0))
+      g <- g + theme(legend.direction = 'horizontal', 
+                     legend.position = 'bottom',
+                     legend.background = element_rect(fill = "white", colour = 'black'),
+                     legend.text = element_text(colour = 'black'),
+                     legend.key = element_rect(fill="white",colour="white"))
+      g = g + theme(panel.background = element_rect(fill = "white", colour = 'grey'))
+      g = g + theme(plot.background = element_rect(fill = "white", colour = 'grey'),
+                    panel.grid = element_blank())
+      g = g + theme(axis.text.x=element_text(colour="black"),
+                    axis.text.y=element_text(colour="black"))
+      g = g + theme(plot.title = element_text(color="black"),
+                    axis.title.x = element_text(color="black"),
+                    axis.title.y = element_text(color="black"))
+      g = g + theme(line = element_line(color="black"),
+                    rect= element_rect(color="black"),
+                    text=element_text(color="black"))
+      g = g + theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
+      
+      print(g)
+    }
+    ggsave("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/Analyses and Images/PCA/morphology_pca_PC1PC2_black.png", 
+           g, bg = "transparent",width=7,height=5,units = "in")
+    {
+      palette(c("black","red","orange","goldenrod","green","blue",
+                "cyan","magenta","brown","pink","lightblue"))
+      par(
+        bg = NA,
+        col.axis = "black",
+        fg = "black",
+        col.lab = "black",
+        col.main = "black"
+      )
+      g <- ggbiplot(pca_full, choices = c(1,3), obs.scale = 1, var.scale = 1, 
+                    groups = axes_full$SPP, ellipse = T, 
+                    circle = F,var.axes = F, alpha=0)
+      
+      g = g +
+        scale_color_manual(name="", values=c("red","orange","goldenrod","green","cyan",
+                                             "blue","purple","magenta","brown","lightblue",
+                                             "pink")) +
+        #scale_color_manual(name="", values=c("cyan", "black","red","cyan","cyan",
+        #                                     "red","cyan","red","black","black","black")) +
+        #scale_color_manual(name="", values=c("cyan", "red","black","cyan","black",
+        #                                     "cyan","red","cyan","cyan","red","black")) +
+        scale_shape_manual(name="", values=c(1,2,3,4,5,6,7,8,9,10,11)) +
+        geom_point(aes(colour=axes_full$SPP, shape=axes_full$SPP))
+      g = g + ggtitle("")
+      g = g + theme(plot.title = element_text(color="black", face="italic",hjust=0))
+      g <- g + theme(legend.direction = 'horizontal', 
+                     legend.position = 'bottom',
+                     legend.background = element_rect(fill = "white", colour = 'black'),
+                     legend.text = element_text(colour = 'black'),
+                     legend.key = element_rect(fill="white",colour="white"))
+      g = g + theme(panel.background = element_rect(fill = "white", colour = 'grey'))
+      g = g + theme(plot.background = element_rect(fill = "white", colour = 'grey'),
+                    panel.grid = element_blank())
+      g = g + theme(axis.text.x=element_text(colour="black"),
+                    axis.text.y=element_text(colour="black"))
+      g = g + theme(plot.title = element_text(color="black"),
+                    axis.title.x = element_text(color="black"),
+                    axis.title.y = element_text(color="black"))
+      g = g + theme(line = element_line(color="black"),
+                    rect= element_rect(color="black"),
+                    text=element_text(color="black"))
+      g = g + theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
+      
+      print(g)
+      
+      #print(g)
+    }
+    ggsave("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/Analyses and Images/PCA/morphology_pca_PC1PC3_black.png", 
+           g, bg = "transparent",width=7,height=5,units = "in")
+    {
+      palette(c("black","red","orange","goldenrod","green","blue",
+                "cyan","magenta","brown","pink","lightblue"))
+      par(
+        bg = NA,
+        col.axis = "black",
+        fg = "black",
+        col.lab = "black",
+        col.main = "black"
+      )
+      g <- ggbiplot(pca_full, choices = c(2,3), obs.scale = 1, var.scale = 1, 
+                    groups = axes_full$SPP, ellipse = T, 
+                    circle = F,var.axes = F, alpha=0)
+      
+      g = g +
+        scale_color_manual(name="", values=c("red","orange","goldenrod","green","cyan",
+                                             "blue","purple","magenta","brown","lightblue",
+                                             "pink")) +
+        #scale_color_manual(name="", values=c("cyan", "black","red","cyan","cyan",
+        #                                     "red","cyan","red","black","black","black")) +
+        #scale_color_manual(name="", values=c("cyan", "red","black","cyan","black",
+        #                                     "cyan","red","cyan","cyan","red","black")) +
+        scale_shape_manual(name="", values=c(1,2,3,4,5,6,7,8,9,10,11)) +
+        geom_point(aes(colour=axes_full$SPP, shape=axes_full$SPP))
+      g = g + ggtitle("")
+      g = g + theme(plot.title = element_text(color="black", face="italic",hjust=0))
+      g <- g + theme(legend.direction = 'horizontal', 
+                     legend.position = 'bottom',
+                     legend.background = element_rect(fill = "white", colour = 'black'),
+                     legend.text = element_text(colour = 'black'),
+                     legend.key = element_rect(fill="white",colour="white"))
+      g = g + theme(panel.background = element_rect(fill = "white", colour = 'grey'))
+      g = g + theme(plot.background = element_rect(fill = "white", colour = 'grey'),
+                    panel.grid = element_blank())
+      g = g + theme(axis.text.x=element_text(colour="black"),
+                    axis.text.y=element_text(colour="black"))
+      g = g + theme(plot.title = element_text(color="black"),
+                    axis.title.x = element_text(color="black"),
+                    axis.title.y = element_text(color="black"))
+      g = g + theme(line = element_line(color="black"),
+                    rect= element_rect(color="black"),
+                    text=element_text(color="black"))
+      g = g + theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
+      
+      print(g)
+      
+      #print(g)
+    }
+    ggsave("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/Analyses and Images/PCA/morphology_pca_PC2PC3_black.png", 
+           g, bg = "transparent",width=7,height=5,units = "in")
+  }
   
   png("all_pcs_plot.png",width=900,height=400); {
   par(mfrow=c(1,4),mar=c(4,4,0.2,0.2))

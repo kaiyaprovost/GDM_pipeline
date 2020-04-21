@@ -1,3 +1,7 @@
+## need to change this to be able to handle many different csv files at once 
+
+
+
 rm(list=ls())
 args = commandArgs(trailingOnly=TRUE)
 if (length(args)<=0) {
@@ -5,7 +9,7 @@ if (length(args)<=0) {
     "BELLII",  "BILINEATA", "BRUNNEICAPILLUS","FLAVICEPS","FUSCA",
     "CRISSALE","CURVIROSTRE","MELANURA","NITENS","SINUATUS"
   ))
-  chromlist=(c(#"10","11","12","13","14","15","16",
+  chromlist=(c("10","11","12","13","14","15","16",
                "17","18","19",
                "1A","1B","2",
                "20","21","22","23","24","25","26","27","28",
@@ -427,6 +431,8 @@ loadEnvData = function(morphlocs,morphspp,morphdf,doGENE=F,spp,verbose=F,doEnvpc
   #envfile = "/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/ECOLOGY/enm_layers/ENMS_multilayer_onlyworldclim.tif"
   envfile = "/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/ENMS_multilayer_onlyworldclim.tif"
   env = stack(envfile)
+  morphlocs[,1] = as.numeric(as.character(morphlocs[,1]))
+  morphlocs[,2] = as.numeric(as.character(morphlocs[,2]))
   envdata = as.data.frame(extract(env,morphlocs[,2:1]))
   envdata$SPP = morphspp
   envdata$CATALOG.NUMBER = morphdf$CATALOG.NUMBER
@@ -444,6 +450,12 @@ loadEnvData = function(morphlocs,morphspp,morphdf,doGENE=F,spp,verbose=F,doEnvpc
   }
   colnames(bioclim) = c("BIO1","BIO2","BIO3","BIO4","BIO5","BIO6","BIO7","BIO8","BIO9","BIO10","BIO11","BIO12","BIO13","BIO14","BIO15","BIO16","BIO17","BIO18","BIO19")
   bioclim = bioclim[complete.cases(bioclim),]
+  
+  outenvfile="~/Dropbox (AMNH)/Dissertation/raw_bioclim_values.txt"
+  #if(!(file.exists(outenvfile))) {
+  write.csv(x=bioclim,file=outenvfile)
+  #}
+  
   if (doGENE == F) {
     m = cor(bioclim,use = "pairwise.complete.obs")
     xy <- t(combn(colnames(m),2))
@@ -458,7 +470,11 @@ loadEnvData = function(morphlocs,morphspp,morphdf,doGENE=F,spp,verbose=F,doEnvpc
       all_scores <- predict(all_pca)[,1:numenvpcs]
       colnames(all_scores) <- paste("PC",1:numenvpcs,"A",sep="")
       toprint_all = rbind(all_pca$rotation,summary(all_pca)$importance)
+      
+      #if(!(file.exists("all_pca.csv"))) {
       write.csv(toprint_all,paste("all_pca.csv",sep = ""))
+      
+      #}
       
     }
     
@@ -474,8 +490,13 @@ loadEnvData = function(morphlocs,morphspp,morphdf,doGENE=F,spp,verbose=F,doEnvpc
       colnames(prec_scores) <- paste("PC",1:numenvpcs,"P",sep="")
       toprint_temp = rbind(temp_pca$rotation,summary(temp_pca)$importance)
       toprint_prec = rbind(prec_pca$rotation,summary(prec_pca)$importance)
+      
+      #if(!(file.exists("temperature_pca.csv"))) {
       write.csv(toprint_temp,paste("temperature_pca.csv",sep = ""))
-      write.csv(toprint_prec,paste("precipitation_pca.csv",sep = ""))
+      #}
+      #if(!(file.exists("temperature_pca.csv"))) {
+      write.csv(toprint_prec,paste("temperature_pca.csv",sep = ""))
+      #}
     }
   } else {
     
@@ -483,8 +504,6 @@ loadEnvData = function(morphlocs,morphspp,morphdf,doGENE=F,spp,verbose=F,doEnvpc
       all_pca = read.csv(paste("all_pca.csv",sep = ""),row.names = 1)
       all_pca = all_pca[1:5,]
     } else {
-      
-      
       
       temp_pca = read.csv(paste("temperature_pca.csv",sep = ""),row.names = 1)
       temp_pca = temp_pca[1:5,]
@@ -520,46 +539,58 @@ loadEnvData = function(morphlocs,morphspp,morphdf,doGENE=F,spp,verbose=F,doEnvpc
   data = data[data$SPP == spp,]
   gene = data[,c("CATALOG.NUMBER","LAT","LONG")]
   colnames(gene) = c("Sample","Latitude","Longitude")
+  gene$Sample = droplevels(gene$Sample)
+  gene$Sample = as.character(gene$Sample)
   #print("rownames 1")
-  rownames(gene) <- (gene$Sample)
+  rownames(gene) <- make.unique(gene$Sample)
   #print("rownames 2")
   samples = gene$Sample
   
   #data=data[!duplicated(as.list(data))]
   #gene=gene[!duplicated(as.list(gene))]
   
+  outbiofile="~/Dropbox (AMNH)/Dissertation/processed_bioclim_values.txt"
+  #if(!(file.exists(outbiofile))) {
+  write.csv(x=bioclim_final,file=outbiofile)
+  #}
   
   return(list(bioclim_final,data,gene,samples))
 }
 generateMatrixCsvString = function(matVariable,doPCA=F,doGENE=F,doChroms=F,spp,whichpca,whichchrom,verbose=F) {
   if(matVariable=="STR") {
-    csvstring=paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/BY_SPECIES/CSVS/",spp,"/",spp,"_distancematrix_STR.csv",sep = "")
+    csvstring=paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/BY_SPECIES/CSVS/",spp,"/",
+                    spp,"_distancematrix_STR.csv",sep = "")
   } else if (matVariable=="PRES") {
     csvstring=list.files(path = paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/BY_SPECIES/CONVERTED/",spp,sep = ""),
-                         pattern = glob2rx("*worldclim.asc*AGGFACT-1.*MORPH-AND-GENE-DISTANCES.txt.converted.txt$"),full.names = T)[1]
+                         pattern = glob2rx("*worldclim.asc*AGGFACT-1.*MORPH-AND-GENE-DISTANCES.txt.converted.txtREDUCED.csv$"),full.names = T)[1]
   } else if (matVariable=="MID") {
     csvstring=list.files(path = paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/BY_SPECIES/CONVERTED/",spp,sep = ""),
-                         pattern = glob2rx("*MID.asc*AGGFACT-1.*MORPH-AND-GENE-DISTANCES.txt.converted.txt$"),
+                         pattern = glob2rx("*MID.asc*AGGFACT-1.*MORPH-AND-GENE-DISTANCES.txt.converted.txtREDUCED.csv$"),
                          full.names = T)[1]
   } else if (matVariable=="LGM") {
     csvstring=list.files(path = paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/BY_SPECIES/CONVERTED/",spp,sep = ""),
-                         pattern = glob2rx("*LGM.asc*AGGFACT-1.*MORPH-AND-GENE-DISTANCES.txt.converted.txt$"),full.names = T)[1]
+                         pattern = glob2rx("*LGM.asc*AGGFACT-1.*MORPH-AND-GENE-DISTANCES.txt.converted.txtREDUCED.csv$"),full.names = T)[1]
   } else if (matVariable=="IBD") {
-    csvstring=paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/BY_SPECIES/CSVS/",spp,"/",spp,"_distancematrix_geog.csv",sep = "")
+    csvstring=paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/BY_SPECIES/CSVS/",spp,"/",
+                    spp,"_distancematrix_geog.csv",sep = "")
   } else if (matVariable=="ENV") {
-    csvstring=paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/BY_SPECIES/CSVS/",spp,"/",spp,"_distancematrix_env.csv",sep = "")
+    csvstring=paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/BY_SPECIES/CSVS/",
+                    spp,"/",spp,"_distancematrix_env.csv",sep = "")
   } else if (matVariable=="ABUN") {
-    csvstring=paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/BY_SPECIES/CONVERTED/",spp,"/",spp,"_Idw_abundance_clipped.ascAGGFACT-1.MORPH-AND-GENE-DISTANCES.txt.converted.txt",sep = "")
+    csvstring=paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/BY_SPECIES/CONVERTED/",spp,"/",
+                    spp,"_Idw_abundance_clipped.ascAGGFACT-1.MORPH-AND-GENE-DISTANCES.txt.converted.txtREDUCED.csv",sep = "")
   } else if (matVariable=="GENE") {
     if (doPCA == F) {
       if (doGENE == F) {
-        csvstring = paste( "/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/BY_SPECIES/CSVS/",spp,"/",spp,"_distancematrix_morph.csv",sep = "")
+        csvstring = paste( "/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/BY_SPECIES/CSVS/",
+                           spp,"/",spp,"_distancematrix_morph.csv",sep = "")
       } else {
         if (doChroms==F) {
-          csvstring = paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/BY_SPECIES/CSVS/",spp,"/",spp,"_distancematrix_FULLGENOME.csv.converted",sep = "")
+          csvstring = list.files(path=paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/BY_SPECIES/CSVS/",
+                            spp,"/",spp,"_distancematrix_FULLGENOME.csv.converted",sep = ""),full.names = T)#[1]
         } else {
           csvstring = list.files(path=paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/BY_SPECIES/CSVS/",spp,"/",sep=""),
-                                 pattern=paste("Tgut_",whichchrom,".csv.converted$",sep=""),full.names = T)[1]
+                                 pattern=paste("Tgut_",whichchrom,".csv.converted$",sep=""),full.names = T)#[1]
         }
       }
     } else {
@@ -573,74 +604,83 @@ generateMatrixCsvString = function(matVariable,doPCA=F,doGENE=F,doChroms=F,spp,w
   return(csvstring)
 }
 readDataChangeHeaderGDM = function(csvstring,makeUnique=F,verbose=F) {
-  df = read.csv(csvstring,header = F,sep = "\t",stringsAsFactors = F)
-  #df = read.csv(paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/BY_SPECIES/CONVERTED/",spp,"/",spp,"_Idw_abundance_clipped.ascAGGFACT-1.MORPH-AND-GENE-DISTANCES.txt.converted.txt",sep = ""),header = F,sep = "\t",stringsAsFactors=F)
-  if (ncol(df) == 1) {
-    #df = read.csv(paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/BY_SPECIES/CONVERTED/",spp,"/",spp,"_Idw_abundance_clipped.ascAGGFACT-1.MORPH-AND-GENE-DISTANCES.txt.converted.txt",sep = ""),header = T,sep = ",")
-    df = read.csv(csvstring,header = F,sep = ",",stringsAsFactors = F)
-  }
-  #df=df[!duplicated(as.list(df))]
   
-  ## make sure only using the first one
-  colnames(df) = NULL
-  colnames(df) = as.character(df[1,])
-  splits = strsplit(as.character(df[1,]),"/")
-  firstsplits = sapply(splits,FUN=function(x){return(x[1])})
-  firstsplits[is.na(firstsplits)] = ""
-  colnames(df) = firstsplits
-  df[1,] = firstsplits
-  colnames(df)[1] = "Sample"
-  df[,1] = factor(df[,1])
-  #df = df[-1,]
-  #df=df[!duplicated(as.list(df))]
-  df = unique(df)
-  
-  #df = df[which(rownames(df) %in% colnames(df)),]
-  df = df[which(df[,1] %in% colnames(df)),]
-  colnames(df) = make.unique(colnames(df))
-  rownames(df) = make.unique(as.character(df[,1]))
-  
-  if(makeUnique==T) {
-    df = as.data.frame(unique(df))
-    df = as.data.frame(t(unique(df)))
-    df$Sample = rownames(df)
-    #df=df[!duplicated(as.list(df))]
-    df = df[which(rownames(df) %in% c("Sample",colnames(df))),]
-    df = as.data.frame(t(unique(df))) ## bad 
-    df = as.data.frame(unique(df))
-    #df=df[!duplicated(as.list(df))]
-    df = df[which(rownames(df) %in% c("Sample",colnames(df))),]
-    df = df[order(rownames(df)),order(colnames(df))]
-    df = df[-c(which(rownames(df)=="Sample")),-c(which(colnames(df)=="Sample"))]
-    df = cbind(rownames(df),df)
-    colnames(df)[1] = "Sample"
-    rownames(df) = colnames(df)[2:ncol(df)]
+  if(file.exists(csvstring)) {
     
+    
+    
+    df = (read.csv(csvstring,header = F,sep = "\t",stringsAsFactors = F))
+    #df = read.csv(paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/BY_SPECIES/CONVERTED/",spp,"/",spp,"_Idw_abundance_clipped.ascAGGFACT-1.MORPH-AND-GENE-DISTANCES.txt.converted.txt",sep = ""),header = F,sep = "\t",stringsAsFactors=F)
+    if (ncol(df) == 1) {
+      #df = read.csv(paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/BY_SPECIES/CONVERTED/",spp,"/",spp,"_Idw_abundance_clipped.ascAGGFACT-1.MORPH-AND-GENE-DISTANCES.txt.converted.txt",sep = ""),header = T,sep = ",")
+      df = read.csv(csvstring,header = F,sep = ",",stringsAsFactors = F)
+    }
+    #df=df[!duplicated(as.list(df))]
+    
+    ## make sure only using the first one
+    colnames(df) = NULL
+    colnames(df) = as.character(df[1,])
+    splits = strsplit(as.character(df[1,]),"/")
+    firstsplits = sapply(splits,FUN=function(x){return(x[1])})
+    firstsplits[is.na(firstsplits)] = ""
+    colnames(df) = firstsplits
+    df[1,] = firstsplits
+    colnames(df)[1] = "Sample"
+    df[,1] = factor(df[,1])
+    #df = df[-1,]
+    #df=df[!duplicated(as.list(df))]
+    df = unique(df)
+    
+    #df = df[which(rownames(df) %in% colnames(df)),]
+    df = df[which(df[,1] %in% colnames(df)),]
+    colnames(df) = make.unique(colnames(df))
+    rownames(df) = make.unique(as.character(df[,1]))
+    
+    if(makeUnique==T) {
+      df = as.data.frame(unique(df))
+      df = as.data.frame(t(unique(df)))
+      df$Sample = rownames(df)
+      #df=df[!duplicated(as.list(df))]
+      df = df[which(rownames(df) %in% c("Sample",colnames(df))),]
+      df = as.data.frame(t(unique(df))) ## bad 
+      df = as.data.frame(unique(df))
+      #df=df[!duplicated(as.list(df))]
+      df = df[which(rownames(df) %in% c("Sample",colnames(df))),]
+      df = df[order(rownames(df)),order(colnames(df))]
+      df = df[-c(which(rownames(df)=="Sample")),-c(which(colnames(df)=="Sample"))]
+      df = cbind(rownames(df),df)
+      colnames(df)[1] = "Sample"
+      rownames(df) = colnames(df)[2:ncol(df)]
+      
+    } else {
+      df = df[-1,]
+      df = df[order(rownames(df)),order(colnames(df))]
+      df = df[,-c(which(colnames(df)=="Sample"))]
+      df = cbind(rownames(df),df)
+      colnames(df)[1] = "Sample"
+      
+    }
+    
+    
+    
+    
+    #df=df[!duplicated(as.list(df))]
+    
+    rownames(df) = make.unique(stringr::str_replace_all(rownames(df),"[^[:alnum:]]",""))
+    colnames(df) = make.unique(stringr::str_replace_all(colnames(df),"[^[:alnum:]]",""))
+    df$Sample = stringr::str_replace_all(df$Sample,"[^[:alnum:]]","")
+    
+    #df = unique(df)
+    
+    #rownames(df) = stringr::str_replace_all(rownames(df),"[A-IN-Z]","")
+    #colnames(df)[2:ncol(df)] = stringr::str_replace_all(colnames(df)[2:ncol(df)],"[A-IN-Z]","")
+    #df$Sample = stringr::str_replace_all(df$Sample,"[A-IN-Z]","")
+    
+    return(df)
   } else {
-    df = df[-1,]
-    df = df[order(rownames(df)),order(colnames(df))]
-    df = df[,-c(which(colnames(df)=="Sample"))]
-    df = cbind(rownames(df),df)
-    colnames(df)[1] = "Sample"
-    
+    print("FILE DOES NOT EXIST")
+    return(NULL)
   }
-  
-  
-  
-  
-  #df=df[!duplicated(as.list(df))]
-  
-  rownames(df) = make.unique(stringr::str_replace_all(rownames(df),"[^[:alnum:]]",""))
-  colnames(df) = make.unique(stringr::str_replace_all(colnames(df),"[^[:alnum:]]",""))
-  df$Sample = stringr::str_replace_all(df$Sample,"[^[:alnum:]]","")
-  
-  #df = unique(df)
-  
-  #rownames(df) = stringr::str_replace_all(rownames(df),"[A-IN-Z]","")
-  #colnames(df)[2:ncol(df)] = stringr::str_replace_all(colnames(df)[2:ncol(df)],"[A-IN-Z]","")
-  #df$Sample = stringr::str_replace_all(df$Sample,"[A-IN-Z]","")
-  
-  return(df)
 }
 generateFormatted = function(univariate=F,columnnumber=NULL,bioclim_final,distPredList,GENE,dogeo=F,IBD,verbose=F) {
   if(verbose==T){
@@ -665,6 +705,12 @@ generateFormatted = function(univariate=F,columnnumber=NULL,bioclim_final,distPr
       #print(head(distPredList))
       #print(dim(distPredList))
     }
+    # print(head(GENE))
+    print(duplicated(GENE$Sample))
+    print("----")
+    #print(head(bioclim_final)) ## messed up 
+    #print(head(distPredList))
+    print(duplicated(bioclim_final$Sample))
     formatted <- formatsitepair(bioData = GENE,bioFormat = 3,siteColumn = "Sample",XColumn = "Longitude",YColumn = "Latitude",
                                 predData = bioclim_final,distPreds = distPredList)
     if(verbose==T){print("DIST")}
@@ -709,7 +755,7 @@ generateFormatted = function(univariate=F,columnnumber=NULL,bioclim_final,distPr
   }
   return(list(formatted,selected_col))
 }
-createModels = function(formatted,univariate,dogeo,verbose=F) {
+createModels = function(formatted,univariate,dogeo,verbose=F,prefix,suffix) {
   numvars=((ncol(formatted)-6)/2)
   if(verbose==T){print(numvars)}
   if (numvars > 2) {
@@ -744,13 +790,14 @@ createModels = function(formatted,univariate,dogeo,verbose=F) {
   print(paste("Explained by:",fulltag,model$explained)) ## need to save this
   print(paste("Null deviance: ",model$nulldeviance))
   print(paste("GDM deviance: ",model$gdmdeviance)) 
+  
   if(verbose==T){print("Model splines:")
     print(model$splines)}
   #residuals = model$predicted-model$observed
   return(model)
 }
 doImportanceTesting = function(doImp,model,formatted,distPredList,doPCA,doGENE,spp,doChroms,
-                               whichchrom,verbose=F,prefix,fullmod=T,nPerm=50,doEnvpcs,numenvpcs) {
+                               whichchrom,verbose=F,prefix,fullmod=T,nPerm=50,doEnvpcs,numenvpcs,dogeo) {
   start_time <- Sys.time()
   if(verbose==T){print(start_time)}
   if(model$splines[1] == 3) {
@@ -844,7 +891,13 @@ doImportanceTesting = function(doImp,model,formatted,distPredList,doPCA,doGENE,s
   } else {
     suffix=paste("_pc",whichpca,sep = "") 
   }
+  
+  if(dogeo==T) {
+    suffix=paste("_geo",suffix,sep="")
+  }
+  
   if(verbose==T){print("done suffixes")}
+  
   
   
   if(!(is.null(modTest))) {
@@ -894,6 +947,20 @@ runGDMs = function(doimp = F, doPCA = F,doGENE = F,whichpca = 1,univariate = T,d
   if(doEnvpcs==T){
     prefix=paste("PC",numenvpcs,"-",prefix,sep="")
   }
+  if (doPCA == F) {
+    if (doGENE == F) {
+      suffix="_allmorph" 
+    } else {
+      
+      if(doChroms==F) {
+        suffix="_gene" } else {suffix=paste("_chr",whichchrom,sep="") }
+    }
+  } else {
+    suffix=paste("_pc",whichpca,sep = "") 
+  }
+  if(dogeo==T) {
+    suffix=paste("_geo",suffix,sep="")
+  }
   
   for (spp in spplist) {
     print(spp)
@@ -905,12 +972,22 @@ runGDMs = function(doimp = F, doPCA = F,doGENE = F,whichpca = 1,univariate = T,d
     morphspp = morphlist[[3]]
     setwd("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/")
     
-    if(verbose==T){print("loading environment")}
+    if(verbose==T){print("loading environment")
+      print(head(morphlocs))
+      print(head(morphspp))
+      print(head(morphdf))
+      print(doGENE)
+      print(spp)
+      print(verbose)
+      print(numenvpcs)
+    }
+    
+    
     envlist = loadEnvData(morphlocs,morphspp,morphdf,doGENE,spp,verbose=verbose,numenvpcs=numenvpcs)
     if(verbose==T){print("done env")}
     bioclim_final = envlist[[1]]
     data = envlist[[2]]
-    gene = envlist[[3]]
+    gene = envlist[[3]] ## this is broken
     samples = envlist[[4]]
     gsplit = strsplit(as.character(gene$Sample),"/")
     gene$Sample = sapply(gsplit,FUN=function(x){return(x[1])})
@@ -944,32 +1021,41 @@ runGDMs = function(doimp = F, doPCA = F,doGENE = F,whichpca = 1,univariate = T,d
     for (matVariable in matList) {
       print(matVariable)
       csvstring = generateMatrixCsvString(matVariable,doPCA,doGENE,doChroms,spp,whichpca,whichchrom,verbose=verbose)
-      if(length(csvstring) > 1) {
-        df = lapply(csvstring,FUN=function(x){readDataChangeHeaderGDM(x,verbose=verbose)})
-        df = df[order(rownames(df)),order(colnames(df))]
-        
-        #numgenes = length(csvstring)
-        assign(matVariable,df)
-      } else if (length(csvstring) == 1) {
-        
-        if(matVariable=="STR") {
-          df = readDataChangeHeaderGDM(csvstring,makeUnique = T,verbose=verbose) ## originally F
-          
-        } else {
-          df = readDataChangeHeaderGDM(csvstring,makeUnique = T,verbose=verbose)
-          
-        }
-        #df=df[!duplicated(as.list(df))]
-        df = df[order(rownames(df)),order(colnames(df))]
-        
-        
-        
-        assign(matVariable,df)
-      } else {
-        print("FILE DOES NOT EXIST, SKIPPING")
-        toexit = T
-      }
       
+      if(sum(!file.exists(csvstring))!=0){
+        toexit=T
+        print("FILE DOES NOT EXIST, SKIPPING")
+      } else {
+        
+        ## changing these lines to be a for loop over the csvstrings?
+        
+        if(length(csvstring) > 1) {
+          df = lapply(csvstring,FUN=function(x){readDataChangeHeaderGDM(x,verbose=verbose)})
+          df = df[order(rownames(df)),order(colnames(df))]
+          
+          #numgenes = length(csvstring)
+          assign(matVariable,df)
+        } else if (length(csvstring) == 1) {
+          
+          if(matVariable=="STR") {
+            df = readDataChangeHeaderGDM(csvstring,makeUnique = T,verbose=verbose) ## originally F
+            
+          } else {
+            df = readDataChangeHeaderGDM(csvstring,makeUnique = T,verbose=verbose)
+            
+          }
+          #df=df[!duplicated(as.list(df))]
+          df = df[order(rownames(df)),order(colnames(df))]
+          
+          
+          
+          assign(matVariable,df)
+        } else {
+          print("FILE DOES NOT EXIST, SKIPPING")
+          toexit = T
+        }
+        
+      }
     }
     
     if(toexit==T) {
@@ -1139,21 +1225,21 @@ runGDMs = function(doimp = F, doPCA = F,doGENE = F,whichpca = 1,univariate = T,d
     
     bioclim_final = bioclim_final[which(bioclim_final$Sample %in% tokeep),]
     distPredList = lapply(matList,FUN = function(x) {df = get(matVariable); df = as.matrix(df); return(df) })
+    
+    
+    numallnames = lapply(distPredList,FUN = function(x) {return(length(x[,1])) })
+    numunqnames = lapply(distPredList,FUN = function(x) {return(length(unique(x[,1]))) })
+    duplistname = lapply(distPredList,FUN = function(x) {return(duplicated(unique(x[,1]))) })
+    
+    
     names(distPredList) = matList
     distPredList = distPredList[names(distPredList)!="GENE"]
     if(verbose==T){print("done making list")}
     
-    if (doPCA == F) {
-      if (doGENE == F) {
-        suffix="_allmorph" 
-      } else {
-        
-        if(doChroms==F) {
-          suffix="_gene" } else {suffix=paste("_chr",whichchrom,sep="") }
-      }
-    } else {
-      suffix=paste("_pc",whichpca,sep = "") 
-    }
+    print(matList)
+    print(numallnames)
+    print(numunqnames)
+    print(duplistname)
     
     if(univariate==F) {
       if(verbose==T){print("start multivar")}
@@ -1164,31 +1250,55 @@ runGDMs = function(doimp = F, doPCA = F,doGENE = F,whichpca = 1,univariate = T,d
       oldrows = nrow(formatted)
       
       ## remove NA 
-      formatted = formatted[complete.cases(formatted),]
-      if(verbose==T){print(paste("ROWS REMAINING:",nrow(formatted),"OF",oldrows))}
+      #formatted = formatted[complete.cases(formatted),]
+      #if(verbose==T){print(paste("ROWS REMAINING:",nrow(formatted),"OF",oldrows))}
       
       
       selected_col = formattedlist[[2]]
       ## run models 
       if(verbose==T){print("start models")}
-      model = createModels(formatted,univariate,dogeo)
+      model = createModels(formatted,univariate,dogeo,verbose=verbose,prefix=prefix,suffix=suffix)
+      if(verbose==T){print("end models")}
       
+      if(verbose==T){print("start null check")}
       if(!is.null(model)) {
         isplines = isplineExtract(model)
         splineheight = isplines$y[nrow(isplines$y),]
+        if(verbose==T){print("not null")}
       } else {
         print("FINAL MODEL IS BAD, STOP")
         break
       }
+      if(verbose==T){print("end null check")}
       
+      if(verbose==T){print("output params file")}
+      
+      #print(str(model))
+      #tempsum=print(summary.gdm(model))
+      #print(class(tempsum))
+      
+      modelstring2 = paste(spp,"_",prefix,"_modelparameters",suffix,".txt",sep = "") 
+      capture.output(summary.gdm(model),file=modelstring2)
+      
+      if(verbose==T){print("calculate start")}
       
       if(doEnvpcs==T) {
         start=(numenvpcs*2)+1
       } else {
-        start=2
+        if(dogeo==F) {start=2} else {start=3}
+        
       }
       
-      names(splineheight)[start:length(splineheight)] = names(distPredList)
+      print(splineheight)
+      print(names(distPredList))
+      
+      if(length(names(distPredList))==1 && names(splineheight)[length(splineheight)] == "matrix_1") {
+        names(splineheight)[length(splineheight)] = names(distPredList)
+        
+      } else {
+        names(splineheight)[start:length(splineheight)] = names(distPredList)
+      }
+      
       print("Spline heights:")
       print(splineheight)
       
@@ -1196,6 +1306,9 @@ runGDMs = function(doimp = F, doPCA = F,doGENE = F,whichpca = 1,univariate = T,d
       png(heightstring)
       barplot(splineheight,las=2,main=spp)
       dev.off()
+      
+      heightstring2 = paste(spp,"_",prefix,"_splineheights",suffix,".txt",sep = "") 
+      write.csv(splineheight,heightstring2)
       
       if (!(is.null(model))) {
         if(doEnvpcs==T) {modeloff=(numenvpcs*2)+1} else {modeloff=2}
@@ -1210,7 +1323,7 @@ runGDMs = function(doimp = F, doPCA = F,doGENE = F,whichpca = 1,univariate = T,d
         dev.off()
       }
       if(doimp==T) {
-        doImportanceTesting(doImp,model,formatted,distPredList,doPCA,doGENE,spp,doChroms,whichchrom,prefix=prefix,verbose=verbose,doEnvpcs=doEnvpcs,numenvpcs=numenvpcs)
+        doImportanceTesting(doImp,model,formatted,distPredList,doPCA,doGENE,spp,doChroms,whichchrom,prefix=prefix,verbose=verbose,doEnvpcs=doEnvpcs,numenvpcs=numenvpcs,dogeo=dogeo)
       }
     } else {
       if(doEnvpcs==T) {colsep=(numenvpcs*2)} else {colsep=0}
@@ -1220,7 +1333,7 @@ runGDMs = function(doimp = F, doPCA = F,doGENE = F,whichpca = 1,univariate = T,d
         formatted = formattedlist[[1]]
         selected_col = formattedlist[[2]]
         if(verbose==T){print("make uni model")}
-        model = createModels(formatted,univariate,dogeo,verbose=verbose)
+        model = createModels(formatted,univariate,dogeo,verbose=verbose,prefix=prefix,suffix=suffix)
         if (!(is.null(model))) {
           length(model$predictors)
           # model$predictors = selected_col
@@ -1240,55 +1353,150 @@ runGDMs = function(doimp = F, doPCA = F,doGENE = F,whichpca = 1,univariate = T,d
 ## got through rest with bel
 #spplist="BELLII"; spp="BELLII"
 #matList=c("GENE","STR","PRES","MID","LGM","IBD","ENV","ABUN")
-matList=c("GENE","STR","PRES","IBD","ABUN","ENV","LGM")
-doimp = T; doPCA = F; doGENE = T; whichpca = 1; univariate = F; dogeo = F; doChroms = T; whichchrom="Z"
-doEnvpcs = T;
+matList=c("GENE","STR","IBD","PRES","ABUN","ENV","LGM")
+doimp = F; doPCA = F; doGENE = F; whichpca = 1; 
+univariate = F; dogeo = T; doChroms = F; whichchrom="1"
+doEnvpcs = F;
+verbose=F;
 numenvpcs=3;
 chrom=1
-# runGDMs(doimp = F,doPCA = F,doGENE = F,whichpca = 1,
-#         univariate = F,dogeo = F,doChroms = F,
-#         whichchrom=chrom,matList=matList,spplist="BELLII",doEnvpcs=T,verbose=T,numenvpcs=numenvpcs)
-# runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 1,
-#         univariate = F,dogeo = F,doChroms = F,
-#         whichchrom=chrom,matList=matList,spplist=spplist,doEnvpcs=T,verbose=F,numenvpcs=numenvpcs)
-runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 2,
-        univariate = F,dogeo = F,doChroms = F,
-        whichchrom=chrom,matList=matList,spplist=(spplist),doEnvpcs=T,verbose=F,numenvpcs=numenvpcs)
-runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 3,
-        univariate = F,dogeo = F,doChroms = F,
-        whichchrom=chrom,matList=matList,spplist=(spplist),doEnvpcs=T,verbose=F,numenvpcs=numenvpcs)
-# runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
-#         univariate = F,dogeo = F,doChroms = F,
-#         whichchrom=chrom,matList=matList,spplist=spplist,doEnvpcs=F,verbose=F,numenvpcs=numenvpcs)
-for(chrom in chromlist) {
-  runGDMs(doimp = T,doPCA = F,doGENE = T,whichpca = 1,
-          univariate = F,dogeo = F,doChroms = T,
-          whichchrom=chrom,matList=matList,spplist=spplist,doEnvpcs=F,verbose=T,numenvpcs=numenvpcs)
-}
-# }
-# runGDMs(doimp = T,doPCA = F,doGENE = T,whichpca = 1,
-#         univariate = F,dogeo = F,doChroms = T,
-#         whichchrom=sample(chromlist),matList=matList,spplist=sample(spplist),doEnvpcs=F,verbose=T,numenvpcs=numenvpcs)
+## univariate WITH the pcas? 
 
-matList=c("GENE","PRES","IBD","ABUN","ENV","LGM")
-# runGDMs(doimp = F,doPCA = F,doGENE = F,whichpca = 1,
-#         univariate = F,dogeo = F,doChroms = F,
-#         whichchrom=chrom,matList=matList,spplist="BELLII",doEnvpcs=T,verbose=T,numenvpcs=numenvpcs)
-# runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 1,
-#         univariate = F,dogeo = F,doChroms = F,
-#         whichchrom=chrom,matList=matList,spplist=spplist,doEnvpcs=T,verbose=F,numenvpcs=numenvpcs)
-runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 2,
-        univariate = F,dogeo = F,doChroms = F,
-        whichchrom=chrom,matList=matList,spplist=(spplist),doEnvpcs=T,verbose=F,numenvpcs=numenvpcs)
-runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 3,
-        univariate = F,dogeo = F,doChroms = F,
-        whichchrom=chrom,matList=matList,spplist=(spplist),doEnvpcs=T,verbose=F,numenvpcs=numenvpcs)
-# runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
-#         univariate = F,dogeo = F,doChroms = F,
-#         whichchrom=chrom,matList=matList,spplist=spplist,doEnvpcs=F,verbose=F,numenvpcs=numenvpcs)
- for(chrom in chromlist) {
-   runGDMs(doimp = T,doPCA = F,doGENE = T,whichpca = 1,
-           univariate = F,dogeo = F,doChroms = T,
-           whichchrom=chrom,matList=matList,spplist=spplist,doEnvpcs=F,verbose=T,numenvpcs=numenvpcs)
- }
-#}
+## generate the combinations need to run 
+## univariate is done
+
+
+
+
+
+#for(spp in c("BELLII")) {
+#for(chrom in sample(chromlist)){
+  for(spp in spplist) {
+    for(chrom in c("Z")) {
+    for(i in sample(length(matList):3)) {
+      tempmat = matList[c(1,2,i)]
+      runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+              univariate = F,dogeo = F,doChroms = T,
+              whichchrom=chrom,matList=tempmat,spplist=spp,doEnvpcs=F,
+              verbose=F,numenvpcs=3)
+    }
+  }
+}
+
+for(spp in sample(spplist)) {
+  for(i in sample(length(matList):3)) {
+    tempmat = matList[c(1,2,i)]
+    runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+            univariate = F,dogeo = F,doChroms = F,
+            whichchrom="1",matList=tempmat,spplist=spp,
+            doEnvpcs=F,
+            verbose=F,numenvpcs=3)
+  }
+}
+
+for(spp in sample(spplist)) {
+  for(i in sample(length(matList):3)) {
+    tempmat = matList[c(1,2,i)]  
+    runGDMs(doimp = F,doPCA = T,doGENE = T,whichpca = 3,
+            univariate = F,dogeo = F,doChroms = F,
+            whichchrom="1",matList=tempmat,spplist=spp,
+            doEnvpcs=F,
+            verbose=F,numenvpcs=3)
+    runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 2,
+            univariate = F,dogeo = F,doChroms = F,
+            whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
+            verbose=F,numenvpcs=3) ## nit not work
+    runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 1,
+            univariate = F,dogeo = F,doChroms = F,
+            whichchrom="1",matList=tempmat,spplist=spp,
+            doEnvpcs=F,
+            verbose=F,numenvpcs=3) ## nit not work
+    runGDMs(doimp = F,doPCA = F,doGENE = F,whichpca = 1,
+            univariate = F,dogeo = F,doChroms = F,
+            whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
+            verbose=T,numenvpcs=3) ## bil mel nit not work
+    runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 3,
+            univariate = F,dogeo = F,doChroms = F,
+            whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
+            verbose=F,numenvpcs=3) ## nit failed
+  }
+}
+
+## ibd str models
+for(chrom in sample(chromlist)){
+  for(spp in spplist) {
+    #for(chrom in c("16")) {
+    for(i in sample(length(matList):4)) {
+      tempmat = matList[c(1,2,3,i)]
+      runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+              univariate = F,dogeo = F,doChroms = T,
+              whichchrom=chrom,matList=tempmat,spplist=spp,doEnvpcs=F,
+              verbose=F,numenvpcs=3)
+    }
+  }
+}
+for(spp in sample(spplist)) {
+  for(i in sample(length(matList):4)) {
+    tempmat = matList[c(1,2,3,i)]
+    runGDMs(doimp = F,doPCA = F,doGENE = F,whichpca = 1,
+            univariate = F,dogeo = F,doChroms = F,
+            whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
+            verbose=T,numenvpcs=3)
+    runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 1,
+            univariate = F,dogeo = F,doChroms = F,
+            whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
+            verbose=F,numenvpcs=3)
+    runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 2,
+            univariate = F,dogeo = F,doChroms = F,
+            whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
+            verbose=F,numenvpcs=3)
+    runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 3,
+            univariate = F,dogeo = F,doChroms = F,
+            whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
+            verbose=F,numenvpcs=3)
+    runGDMs(doimp = F,doPCA = T,doGENE = T,whichpca = 3,
+            univariate = F,dogeo = F,doChroms = F,
+            whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
+            verbose=F,numenvpcs=3)
+  }
+}
+
+## ibd only models
+for(chrom in sample(chromlist)){
+  for(spp in spplist) {
+    #for(chrom in c("16")) {
+    for(i in sample(c(length(matList):4,2))) {
+      tempmat = matList[c(1,3,i)]
+      runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+              univariate = F,dogeo = F,doChroms = T,
+              whichchrom=chrom,matList=tempmat,spplist=spp,doEnvpcs=F,
+              verbose=F,numenvpcs=3)
+    }
+  }
+}
+for(spp in sample(spplist)) {
+  for(i in sample(c(length(matList):4,2))) {
+    tempmat = matList[c(1,3,i)]
+    runGDMs(doimp = F,doPCA = F,doGENE = F,whichpca = 1,
+            univariate = F,dogeo = F,doChroms = F,
+            whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
+            verbose=T,numenvpcs=3)
+    runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 1,
+            univariate = F,dogeo = F,doChroms = F,
+            whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
+            verbose=F,numenvpcs=3)
+    runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 2,
+            univariate = F,dogeo = F,doChroms = F,
+            whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
+            verbose=F,numenvpcs=3)
+    runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 3,
+            univariate = F,dogeo = F,doChroms = F,
+            whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
+            verbose=F,numenvpcs=3)
+    runGDMs(doimp = F,doPCA = T,doGENE = T,whichpca = 3,
+            univariate = F,dogeo = F,doChroms = F,
+            whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
+            verbose=F,numenvpcs=3)
+  }
+}
+
