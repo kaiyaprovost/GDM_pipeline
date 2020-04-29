@@ -5,7 +5,7 @@ outfile = "/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances
 
 setwd("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/")
 
-files = list.files(path="/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/GDM_results/multivariate",
+files = list.files(path="/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/GDM_results/",
                    pattern="variable_deviance",recursive=T,full.names = T)
 ## test is morph only
 
@@ -29,9 +29,11 @@ for (file in files) {
     values=(df[,names(df)[rightcol]])
     names(values) = (rownames(df))
     
-    if(rightcol==13) {
+    
+    
+    if(rightcol==ncol(df)) {
       toadd = "_UNI"
-      rightcol=12
+      rightcol=ncol(df)-1
     } else {
       toadd = ""
     }
@@ -39,10 +41,12 @@ for (file in files) {
     #rownames(otherdf1)
     rnam=c("PC1T","PC2T","PC3T","PC1P","PC2P","PC3P",
            "IBD","LGM","PRES","ENV","MID","STR","ABUN")
+    ## this may not be correct now need to check and see the num of rows 
     
-    otherdf1 = read.csv(sub("deviance","importance",file)) ## before all three had row.names=1
-    otherdf2 = read.csv(sub("deviance","significance",file))
-    otherdf3 = read.csv(sub("deviance","permutations",file))
+    
+    otherdf1 = read.csv(sub("deviance","importance",file),row.names=1) ## before all three had row.names=1
+    otherdf2 = read.csv(sub("deviance","significance",file),row.names=1)
+    otherdf3 = read.csv(sub("deviance","permutations",file),row.names=1)
     
     if(nrow(otherdf1) == length(rnam)) {
       rownames(otherdf1) = rnam
@@ -54,18 +58,19 @@ for (file in files) {
       rownames(otherdf2) = make.unique(as.character(rownames(otherdf3)))
     }
     
-    otherdf1=otherdf1[,-1]
-    otherdf2=otherdf2[,-1]
-    otherdf3=otherdf3[,-1]
+    #otherdf1=otherdf1[,-1]
+    #otherdf2=otherdf2[,-1]
+    #otherdf3=otherdf3[,-1]
     
-    val1 = cbind(otherdf1[,names(otherdf1)[min(rightcol,ncol(otherdf1),na.rm=T)]])
+    val1 = as.data.frame(rbind(otherdf1[,colnames(otherdf1)[min(rightcol,ncol(otherdf1),na.rm=T)]]))
     names(val1) = paste(rownames(otherdf1),"imp")
-    val2 = cbind(otherdf1[,names(otherdf2)[min(rightcol,ncol(otherdf2),na.rm=T)]])
+    val2 = as.data.frame(rbind(otherdf1[,colnames(otherdf2)[min(rightcol,ncol(otherdf2),na.rm=T)]]))
     names(val2) = paste(rownames(otherdf2),"sig")
-    val3 = cbind(otherdf3[,names(otherdf3)[min(rightcol,ncol(otherdf3),na.rm=T)]])
+    val3 = as.data.frame(rbind(otherdf3[,colnames(otherdf3)[min(rightcol,ncol(otherdf3),na.rm=T)]]))
     names(val3) = paste(rownames(otherdf3),"per")
     
     toname = strsplit(file,"/")[[1]]
+    folder=toname[10]
     
     if (is.null(newdf)) {
       
@@ -1049,8 +1054,9 @@ uni = read.csv("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Dist
 
 ## with the new data bivariates
 bi = read.csv("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/GDM_results/bivariate/bivariate_gdm_results.csv",
-              sep=",",skip = 1)
+              sep=",",skip = 1,stringsAsFactors = F)
 ## check for missing data stuff
+bi = bi[bi$NUMERICDATASET!=1,]
 
 boxplot(bi$PERCENT_MISSING~bi$MOST.1MODEL1,las=2,
         notch=F,varWidth=T)
@@ -1060,27 +1066,29 @@ boxplot(bi$PERCENT_MISSING~bi$SPECIES,las=2)
 
 boxplot(bi$PERCENT_MISSING~bi$DATASET,las=2,
         cex.axis=0.5)
-bi=bi[order(bi$DATASET, bi$SPECIES),]
+#bi=bi[order(bi$DATASET, bi$SPECIES),]
 
 palette(RColorBrewer::brewer.pal(12,"Paired"))
-plot(as.numeric((bi$DATASET)),bi$PERCENT_MISSING,
+plot(as.numeric(as.factor(bi$DATASET)),bi$PERCENT_MISSING,
      xlim=c(1,37),xaxt="n",xlab="",col="white")
 axis(1,at=1:37,labels = levels(bi$DATASET)[1:37],las=2,cex.axis=0.5)
 for(i in 1:length(unique(bi$SPECIES))) {
   spp = unique(bi$SPECIES)[i]
   temp = bi[bi$SPECIES==spp,]
-  points(as.numeric((temp$DATASET)),temp$PERCENT_MISSING,
+  points(as.numeric(as.factor(temp$DATASET)),temp$PERCENT_MISSING,
         type="b",col=i,pch=i)
-  lines(as.numeric((temp$DATASET)),temp$PERCENT_MISSING,
+  lines(as.numeric(as.factor(temp$DATASET)),temp$PERCENT_MISSING,
        type="l",col=i,pch=i)
 }
 legend("bottomleft",
        legend=c(unique(as.character(bi$SPECIES))),bty="n",cex=0.75,
-       ncol=2,col=unique(as.numeric(bi$SPECIES)),pch=unique(as.numeric(bi$SPECIES)))
+       ncol=2,col=unique(as.numeric(as.factor(bi$SPECIES))),
+       pch=unique(as.numeric(as.factor(bi$SPECIES))))
 
 png("missing_vs_species_vs_model_best.png",width=800)
 par(mfrow=c(2,5),mar=c(4,4,0,0))
 for(i in 1:10){
+  print(i)
   temp=bi[bi$SPECIES==unique(bi$SPECIES)[i],]
   boxplot(temp$PERCENT_MISSING~temp$MOSTA.1MODEL1,las=2,
           col=c(1:6),
