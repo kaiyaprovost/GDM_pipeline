@@ -1,7 +1,5 @@
 ## need to change this to be able to handle many different csv files at once 
 
-
-
 rm(list=ls())
 args = commandArgs(trailingOnly=TRUE)
 if (length(args)<=0) {
