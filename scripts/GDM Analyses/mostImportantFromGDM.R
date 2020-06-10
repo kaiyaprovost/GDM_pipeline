@@ -301,8 +301,13 @@ barplot(as.numeric(as.character(imps$`Percent deviance explained`)),
 
 
 ## with the new data univariates
-uni = read.csv("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/GDM_results/univariate/univariate_gdm_results.csv",
-               sep=",",skip = 1)
+#uni = read.csv("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/GDM_results/univariate/univariate_gdm_results.csv",
+#               sep=",",skip = 1)
+uni = read.table("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/GDM_results/bivariate/bivariate_gdm_results.csv",
+                 sep="\t",
+                 header=T,
+                 stringsAsFactors = F,
+                 skip = 0)
 {
   #uni_trimmed = uni[,c(1:9,16:19,26:32)]
   uni_trimmed = uni[,c("DATASET","SPECIES",
@@ -465,7 +470,7 @@ uni = read.csv("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Dist
   }
   
   ## no str
-  setwd("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/GDM_results/univariate/")
+  setwd("/Users/kprovost/")
   for (spp in unique(uni_trimmed$SPECIES)) {
     print(spp)
     palette(colors)
@@ -1054,47 +1059,45 @@ uni = read.csv("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Dist
 
 ## with the new data bivariates
 bi = read.csv("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/GDM_results/bivariate/bivariate_gdm_results.csv",
-              sep=",",skip = 1,stringsAsFactors = F)
+              sep="\t",skip = 0,stringsAsFactors = F)
 ## check for missing data stuff
 bi = bi[bi$NUMERICDATASET!=1,]
 
-boxplot(bi$PERCENT_MISSING~bi$MOST.1MODEL1,las=2,
-        notch=F,varWidth=T)
-boxplot(bi$PERCENT_MISSING~bi$MOSTA.1MODEL1,las=2,
-        notch=F,varWidth=T)
-boxplot(bi$PERCENT_MISSING~bi$SPECIES,las=2)
+# boxplot(bi$PERCENT_MISSING~bi$MOST.1MODEL1,las=2,
+#         notch=F,varWidth=T)
+# boxplot(bi$PERCENT_MISSING~bi$SPECIES,las=2)
+# 
+# boxplot(bi$PERCENT_MISSING~bi$DATASET,las=2,
+#         cex.axis=0.5)
+# #bi=bi[order(bi$DATASET, bi$SPECIES),]
+# 
+# palette(RColorBrewer::brewer.pal(12,"Paired"))
+# plot(as.numeric(as.factor(bi$DATASET)),bi$PERCENT_MISSING,
+#      xlim=c(1,37),xaxt="n",xlab="",col="white")
+# axis(1,at=1:37,labels = levels(bi$DATASET)[1:37],las=2,cex.axis=0.5)
+# for(i in 1:length(unique(bi$SPECIES))) {
+#   spp = unique(bi$SPECIES)[i]
+#   temp = bi[bi$SPECIES==spp,]
+#   points(as.numeric(as.factor(temp$DATASET)),temp$PERCENT_MISSING,
+#         type="b",col=i,pch=i)
+#   lines(as.numeric(as.factor(temp$DATASET)),temp$PERCENT_MISSING,
+#        type="l",col=i,pch=i)
+# }
+# legend("bottomleft",
+#        legend=c(unique(as.character(bi$SPECIES))),bty="n",cex=0.75,
+#        ncol=2,col=unique(as.numeric(as.factor(bi$SPECIES))),
+#        pch=unique(as.numeric(as.factor(bi$SPECIES))))
 
-boxplot(bi$PERCENT_MISSING~bi$DATASET,las=2,
-        cex.axis=0.5)
-#bi=bi[order(bi$DATASET, bi$SPECIES),]
-
-palette(RColorBrewer::brewer.pal(12,"Paired"))
-plot(as.numeric(as.factor(bi$DATASET)),bi$PERCENT_MISSING,
-     xlim=c(1,37),xaxt="n",xlab="",col="white")
-axis(1,at=1:37,labels = levels(bi$DATASET)[1:37],las=2,cex.axis=0.5)
-for(i in 1:length(unique(bi$SPECIES))) {
-  spp = unique(bi$SPECIES)[i]
-  temp = bi[bi$SPECIES==spp,]
-  points(as.numeric(as.factor(temp$DATASET)),temp$PERCENT_MISSING,
-        type="b",col=i,pch=i)
-  lines(as.numeric(as.factor(temp$DATASET)),temp$PERCENT_MISSING,
-       type="l",col=i,pch=i)
-}
-legend("bottomleft",
-       legend=c(unique(as.character(bi$SPECIES))),bty="n",cex=0.75,
-       ncol=2,col=unique(as.numeric(as.factor(bi$SPECIES))),
-       pch=unique(as.numeric(as.factor(bi$SPECIES))))
-
-png("missing_vs_species_vs_model_best.png",width=800)
-par(mfrow=c(2,5),mar=c(4,4,0,0))
-for(i in 1:10){
-  print(i)
-  temp=bi[bi$SPECIES==unique(bi$SPECIES)[i],]
-  boxplot(temp$PERCENT_MISSING~temp$MOSTA.1MODEL1,las=2,
-          col=c(1:6),
-          notch=F,varWidth=T,xlab="",ylab=unique(bi$SPECIES)[i])
-}
-dev.off()
+# png("missing_vs_species_vs_model_best.png",width=800)
+# par(mfrow=c(2,5),mar=c(4,4,0,0))
+# for(i in 1:10){
+#   print(i)
+#   temp=bi[bi$SPECIES==unique(bi$SPECIES)[i],]
+#   boxplot(temp$PERCENT_MISSING~temp$MOSTA.1MODEL1,las=2,
+#           col=c(1:6),
+#           notch=F,varWidth=T,xlab="",ylab=unique(bi$SPECIES)[i])
+# }
+# dev.off()
 
 {
 bi_trimmed = bi[,c("DATASET","SPECIES",
@@ -1182,7 +1185,7 @@ colors_1mod = c(purple,blue,yellow,red,black,gold,orange,grey,green)
 colors_maxmod = c(gold,purple,yellow,blue,black,green,red,orange,grey)
 
 ## no str
-setwd("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/GDM_results/bivariate/")
+setwd("/Users/kprovost/")
 
 dospp=F
 if(dospp==T){
@@ -1397,6 +1400,18 @@ colff<-matrix(as.numeric(colcol), ncol=ncol(colmat))
 colnames(colff) = colnames(colmat)
 rownames(colff) = rownames(colmat)
 
+png(paste("heatmap_legend.png",sep="_"),width=250)
+par(mar=c(4,4,4,4))
+image(colff,col=levels(colmatf),
+      xaxt="n",yaxt="n",main="% Explained\n")
+axis(3,at=seq(0,1,length.out=6),
+     labels=round(seq(maximumvalue,0,length.out=6)),las=1,
+     cex=0.8)
+axis(2,at=seq(0,1,length.out=5),
+     labels=c("IBA","IBD","IBE","IBH","MIX"),las=2)
+
+dev.off()
+
 png(paste("heatmap_gdm_results",datanum,"_bivariate_all_transparent.png",sep="_"),width=900)
 layout(t(matrix(c(1,3,1,3,1,2,1,2,1,3,1,3),nrow=2)), width = c(6,1),height = c(1,1))
 par(xpd=TRUE,mar=c(1,3,6,1))
@@ -1422,8 +1437,8 @@ dev.off()
 fillsx = matrix(fills[dttn],ncol=ncol(dttn),nrow=nrow(dttn))
 #50-255
 
-dttnr = raster(t(as.matrix(dttn)))
-dtter = raster(t(as.matrix(dtte)))
+dttnr = raster::raster(t(as.matrix(dttn)))
+dtter = raster::raster(t(as.matrix(dtte)))
 dttnr
 }
 
@@ -1434,7 +1449,8 @@ newdf=read.table("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Di
 
 
 dx = newdf[,c(48:50)]
-dtt = table(uni_trimmed[,1:2])
+#dtt = table(uni_trimmed[,1:2])
+dtt=table(bi_trimmed[,1:2])
 #dtt = t(dtt)
 dttn = dtt
 dtte

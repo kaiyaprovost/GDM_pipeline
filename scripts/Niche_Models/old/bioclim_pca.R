@@ -43,7 +43,9 @@ plot(elev)
 plot(shapefile,add=T)
 
 clim2 = clim
-r.polys <- rasterize(shapefile, clim2, field = 1, fun = "mean", 
+#r.polys <- rasterize(shapefile, clim2, field = 1, fun = "mean", 
+#                     update = F, updateValue = "NA")
+r.polys <- rasterize(shapefile, climpca, field = 1, fun = "mean", 
                      update = F, updateValue = "NA")
 plot(r.polys)
 clim2[is.na(r.polys),] = NA
@@ -132,16 +134,40 @@ names(climpca)
 
 writeRaster(climpca,"Deserts_Bioclim_PCA_SONCHI.tif",format="GTiff")
 
+climpca = stack("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER1_REVIEW/Deserts_Bioclim_PCA_SONCHI.tif")
+
+wcdshape=shapefile("/Users/kprovost/Dropbox (AMNH)/Dissertation/western_continental_divide/condivl020.shp")
+
+watersheds=shapefile("/Users/kprovost/Downloads/wri_basins/wribasin.shp")
+plot(watersheds,add=F,lwd=2)
+
+
+library(raster)
+library(rgdal)
+ext_user=extent(c(-126,-90,18,40))
+path <- readOGR(dsn = "/Users/kprovost/Dropbox (AMNH)/Dissertation/WCD_from_Ed_1236_4iouz24kv_ConDivides.gpx", layer = "tracks")
+waypoints <- readOGR(dsn = "/Users/kprovost/Dropbox (AMNH)/Dissertation/WCD_from_Ed_1236_4iouz24kv_ConDivides.gpx", layer = "track_points")
+#shapefile("USA_States")->us  #need US state shape
+#shapefile("Mexico_States")->mex  #and Mexico... I can send these too
+#crop(bind(us, mex), ext_user)->NorAmer
+#plot(NorAmer)
+#plot(crop(path, ext_user), add = T, lwd=2, col = "red")
+
+path=crop(path,extent(climpca))
+
 #png("Deserts_Bioclim_PCA_CONTINENT.png")
 png("Deserts_Bioclim_PCA_SONCHI.png")
 plotRGB(climpca,scale=1,r=2,g=1,b=3,colNA="white") #312 is best previously
-plot(shapefile,add=T)
+plot(shapefile,add=T,lty=1)
+plot(path,add=T,lwd=3,lty=3)
 #points(x,col="black",cex=2,pch=4,lwd=5)
 dev.off()
 
 png("Deserts_Bioclim_PCA_SONCHI_ONLY.png")
 climpca[is.na(r.polys),] = NA
 plotRGB(climpca,scale=1,r=2,g=1,b=3,colNA="white") #312 is best previously
+plot(shapefile,add=T,lty=1)
+plot(path,add=T,lwd=3,lty=3)
 dev.off()
 
 
