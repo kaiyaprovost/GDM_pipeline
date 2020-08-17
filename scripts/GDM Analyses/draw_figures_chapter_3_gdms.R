@@ -1,3 +1,5 @@
+setwd("~")
+
 df = read.table("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/GDM_results/bivariate/bivariate_gdm_results.csv",
                 sep="\t",
                 header=T,
@@ -466,3 +468,134 @@ modelC=aov(log(df$CHROM_LENGTH[df$MOSTA.1MODEL2!=""]*100000)
            ~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""])
 summary(modelC) # not sig
 TukeyHSD(modelC) # 
+
+
+## looking at new stats
+
+
+pdf("gdm_bivariate_all_sumstats.pdf",height=4,width=6)
+library(RColorBrewer)
+cols=c(brewer.pal(8,"Dark2")[c(1,3,7,4)],"grey")
+## four panels to see if same
+par(mfrow=c(2,2),cex.axis=1)
+par(mar=c(0.1,4,0.3,0.1))
+#boxplot(df$MEAN_FST[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+#        col=cols,xaxt="n",
+#        ylab="Mean Fst",
+#        xlab="Best Model",las=2)
+plotrix::gap.boxplot(df$MEAN_FST[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+                     gap=list(top=c(0.22,0.56),bottom=c(NA,NA)),
+                     axes=F,ylim=c(0.01,0.58),ylab="Mean Fst",xlab="Best Model",
+                     xaxt="n",col=cols)
+legend("topright",legend=c("IBA","IBD","IBE","IBH","MIX"),
+       col=cols,fill=cols)
+title(ylab="Mean Fst")
+axis(2,labels=c(seq(0,0.2,0.05),0.57),
+     at=c(seq(0,0.2,0.05),0.235),tick=T,las=1)
+boxplot(df$MEAN_DXY[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+        col=cols,xaxt="n",
+        ylab="Mean Dxy",
+        xlab="Best Model",las=1)
+boxplot(df$PERCENT_MISSING[df$MOSTA.1MODEL2!=""]*100~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+        col=cols,xaxt="n",
+        ylab="Percent Missing",
+        xlab="Best Model",las=1)
+boxplot(df$MEAN_RECOMB[df$MOSTA.1MODEL2!=""]/(1e-9)~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+        col=cols,xaxt="n",
+        ylab="Mean Recombination Rate",
+        xlab="Best Model",las=2)
+boxplot(df$number.fst.peaks[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+        col=cols,xaxt="n",
+        ylab="N FST Peaks",
+        xlab="Best Model",las=2)
+boxplot(df$number.fst.peaks[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+        col=cols,xaxt="n",ylim=c(0,500),
+        ylab="N FST Peaks (Cropped)",
+        xlab="Best Model",las=2)
+boxplot(df$number.dxy.peaks[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+        col=cols,xaxt="n",
+        ylab="N DXY Peaks",
+        xlab="Best Model",las=2)
+boxplot(df$number.dxy.peaks[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+        col=cols,xaxt="n",ylim=c(0,500),
+        ylab="N DXY Peaks (Cropped)",
+        xlab="Best Model",las=2)
+boxplot(df$Number.islands[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+        col=cols,xaxt="n",
+        ylab="N Islands",
+        xlab="Best Model",las=2)
+boxplot(df$TAJIMAS[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+        col=cols,xaxt="n",
+        ylab="Tajima's D",
+        xlab="Best Model",las=2)
+boxplot(df$number.sweeps[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+        col=cols,xaxt="n",
+        ylab="N Sweeps",
+        xlab="Best Model",las=2)
+boxplot(df$number.sweeps[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+        col=cols,xaxt="n",ylim=c(0,100),
+        ylab="N Sweeps (Cropped)",
+        xlab="Best Model",las=2)
+boxplot(df$number.dxy.lows[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+        col=cols,xaxt="n",
+        ylab="N Dxy Lows",
+        xlab="Best Model",las=2)
+boxplot(df$number.dxy.lows[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+        col=cols,xaxt="n",ylim=c(0,500),
+        ylab="N Dxy Lows (Cropped)",
+        xlab="Best Model",las=2)
+boxplot(df$CHROM_LENGTH[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+        col=cols,xaxt="n",ylim=c(0,20000),
+        ylab="Chrom Length (not Genome)",
+        xlab="Best Model",las=2)
+boxplot(df$prop.fst.peak[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+        col=cols,xaxt="n",
+        ylab="Proportion FST Peak",
+        xlab="Best Model",las=2)
+boxplot(df$prop.dxy.peak[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+        col=cols,xaxt="n",
+        ylab="Proportion DXY Peak",
+        xlab="Best Model",las=2)
+boxplot(df$prop.isl[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+        col=cols,xaxt="n",
+        ylab="Proportion Island",
+        xlab="Best Model",las=2)
+boxplot(df$prop.swp[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+        col=cols,xaxt="n",
+        ylab="Proportion Sweep",
+        xlab="Best Model",las=2)
+boxplot(df$prop.swp[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+        col=cols,xaxt="n",ylim=c(0,0.01),
+        ylab="Proportion Sweep (Cropped)",
+        xlab="Best Model",las=2)
+boxplot(df$prop.dxy.low[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+        col=cols,xaxt="n",
+        ylab="Proportion Low DXY",
+        xlab="Best Model",las=2)
+boxplot(df$prop.dxy.low[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+        col=cols,xaxt="n",ylim=c(0,0.35),
+        ylab="Proportion Low DXY (Cropped)",
+        xlab="Best Model",las=2)
+
+dev.off()
+
+
+small=df[df$MOSTA.1MODEL2!="",c(4:19,33)]
+agg=aggregate(cbind(small[,1],small[,2],small[,3],
+                    small[,4],small[,5],small[,6],
+                    small[,7],small[,8],small[,9],
+                    small[,10],small[,11],small[,12],
+                    small[,13],small[,14],small[,15],small[,16])
+              ~small[,17],FUN=function(x){mean(x,na.rm=T)})
+colnames(agg) = colnames(small)[c(17,1:16)]
+
+pdf("gdm_bivariate_all_barplots.pdf",height=4,width=6)
+library(RColorBrewer)
+cols=c(brewer.pal(8,"Dark2")[c(1,3,7,4)],"grey")
+## four panels to see if same
+par(mfrow=c(2,2),cex.axis=1)
+par(mar=c(0.1,4,0.3,0.1))
+for(i in 2:17){
+  barplot(agg[,i],col=cols,ylab=colnames(agg)[i])
+}
+dev.off()
