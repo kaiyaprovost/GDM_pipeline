@@ -2,7 +2,7 @@ setwd("~")
 
 df = read.table("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/GDM_results/bivariate/bivariate_gdm_results.csv",
                 sep="\t",
-                header=T,
+                header=T,fill=T,
                 stringsAsFactors = F,
                 skip = 0)
 
@@ -599,3 +599,4 @@ for(i in 2:17){
   barplot(agg[,i],col=cols,ylab=colnames(agg)[i])
 }
 dev.off()
+

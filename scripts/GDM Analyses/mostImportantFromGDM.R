@@ -1,9 +1,11 @@
 ## DROP THE MIX IN THE UNI AND BIV
 
+setwd("~")
 
-outfile = "/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/GDM_results/multivariate/extracting_best_column.alltogether"
+#outfile = "/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/GDM_results/multivariate/extracting_best_column.alltogether"
+outfile = "extracting_best_column.alltogether"
 
-setwd("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/")
+#setwd("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/")
 
 files = list.files(path="/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/GDM_results/",
                    pattern="variable_deviance",recursive=T,full.names = T)

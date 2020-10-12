@@ -10,17 +10,17 @@ if (length(args)<=0) {
     "CRISSALE","CURVIROSTRE","MELANURA","NITENS","SINUATUS"
   ))
   chromlist=(c(#"10","11","12","13","14","15",
-               #"16",
-               #"17","18","19",
-               "1",
-               "1A","1B",#"2",
-               #"20","21","22","23","24","25","26","27","28",
-               #"3",
-               #"4","4A","5","6","7",
-               #"8","9",
-               #"LG2",
-               "LG5",#"LGE22",
-               "mtDNA"#,"Z"
+    #"16",
+    #"17","18","19",
+    "1",
+    "1A","1B",#"2",
+    #"20","21","22","23","24","25","26","27","28",
+    #"3",
+    #"4","4A","5","6","7",
+    #"8","9",
+    #"LG2",
+    "LG5",#"LGE22",
+    "mtDNA"#,"Z"
   ))
   genedistmatrix=NULL
 } else if (length(args)==1) {
@@ -215,7 +215,7 @@ gdm.varImp.edit = function (spTable, geo, splines = NULL, knots = NULL, fullMode
   
   for (v in 1:nVars) {
     fullGDM <- gdm::gdm(currSitePair, geo = geo, splines = splines, 
-                   knots = knots)
+                        knots = knots)
     if (is.null(fullGDM) == TRUE) {
       warning(paste("The model did not fit when testing variable number ", 
                     v, ". Terminating analysis. Returning output objects filled up to the point of termination.", 
@@ -231,7 +231,7 @@ gdm.varImp.edit = function (spTable, geo, splines = NULL, knots = NULL, fullMode
                           varNames)
       permGDM <- try(foreach(k = 1:length(permSitePairs), 
                              .verbose = F, .packages = c("gdm")) %dopar% gdm::gdm(permSitePairs[[k]], 
-                                                                             geo = geo, splines = NULL, knots = NULL))
+                                                                                  geo = geo, splines = NULL, knots = NULL))
       stopCluster(cl)
     }
     else {
@@ -263,7 +263,7 @@ gdm.varImp.edit = function (spTable, geo, splines = NULL, knots = NULL, fullMode
     }
     if (geo == TRUE) {
       noGeoGDM <- gdm::gdm(currSitePair, geo = FALSE, splines = NULL, 
-                      knots = NULL)
+                           knots = NULL)
       if (parallel == TRUE) {
         cl <- makeCluster(cores, outfile = "")
         registerDoParallel(cl)
@@ -274,7 +274,7 @@ gdm.varImp.edit = function (spTable, geo, splines = NULL, knots = NULL, fullMode
         permGDM <- try(foreach(k = 1:length(permSitePairs), 
                                .verbose = F, .packages = c("gdm")) %dopar% 
                          gdm::gdm(permSitePairs[[k]], geo = geo, splines = NULL, 
-                             knots = NULL))
+                                  knots = NULL))
         stopCluster(cl)
       }
       else {
@@ -318,7 +318,7 @@ gdm.varImp.edit = function (spTable, geo, splines = NULL, knots = NULL, fullMode
         testSitePair <- currSitePair[, -c(testVarCols1, 
                                           testVarCols2)]
         noVarGDM <- gdm::gdm(testSitePair, geo = geo, splines = NULL, 
-                        knots = NULL)
+                             knots = NULL)
         if (parallel == TRUE) {
           cl <- makeCluster(cores, outfile = "")
           registerDoParallel(cl)
@@ -329,7 +329,7 @@ gdm.varImp.edit = function (spTable, geo, splines = NULL, knots = NULL, fullMode
           permGDM <- try(foreach(k = 1:length(noVarSitePairs), 
                                  .verbose = F, .packages = c("gdm")) %dopar% 
                            gdm::gdm(noVarSitePairs[[k]], geo = geo, splines = NULL, 
-                               knots = NULL))
+                                    knots = NULL))
           stopCluster(cl)
         }
         else {
@@ -750,7 +750,7 @@ generateFormatted = function(univariate=F,columnnumber=NULL,bioclim_final,distPr
     #print(head(distPredList))
     print(duplicated(bioclim_final$Sample))
     formatted <- gdm::formatsitepair(bioData = GENE,bioFormat = 3,siteColumn = "Sample",XColumn = "Longitude",YColumn = "Latitude",
-                                predData = bioclim_final,distPreds = distPredList)
+                                     predData = bioclim_final,distPreds = distPredList)
     if(verbose==T){print("DIST")}
     formatted$distance = scales::rescale(formatted$distance)
     selected_col = "FULL"
@@ -765,11 +765,11 @@ generateFormatted = function(univariate=F,columnnumber=NULL,bioclim_final,distPr
       if (dogeo==F) {
         if(verbose==T){print("no geo")}
         formatted <- gdm::formatsitepair(bioData = GENE,bioFormat = 3,siteColumn = "Sample",XColumn = "Longitude",YColumn = "Latitude",
-                                    predData = bioclim_subset)
+                                         predData = bioclim_subset)
       } else {
         if(verbose==T){print("yes geo")}
         formatted <- gdm::formatsitepair(bioData = GENE,bioFormat = 3,siteColumn = "Sample",XColumn = "Longitude",YColumn = "Latitude",
-                                    predData = bioclim_subset,distPreds = list(as.matrix(IBD)))
+                                         predData = bioclim_subset,distPreds = list(as.matrix(IBD)))
       }
       if(verbose==T){print("format")}
       formatted$distance = scales::rescale(formatted$distance)
@@ -786,8 +786,8 @@ generateFormatted = function(univariate=F,columnnumber=NULL,bioclim_final,distPr
       }
       bioclim_subset = bioclim_final[,c("Sample","Latitude","Longitude")]
       formatted <- gdm::formatsitepair(bioData = GENE,bioFormat = 3,siteColumn = "Sample",XColumn = "Longitude",YColumn = "Latitude",
-                                  predData = bioclim_subset,
-                                  distPreds = todolist)
+                                       predData = bioclim_subset,
+                                       distPreds = todolist)
       formatted$distance = scales::rescale(formatted$distance)
     }
   }
@@ -1003,8 +1003,10 @@ runGDMs = function(doimp = F, doPCA = F,doGENE = F,whichpca = 1,univariate = T,d
   for (spp in spplist) {
     print(spp)
     
-
-      
+    modelstring2 = paste(spp,"_",prefix,"_modelparameters",suffix,".txt",sep = "") 
+    if(file.exists(modelstring2) && overwrite==F) {
+      print("SKIPPING")
+    } else {
       
       if(verbose==T){print("loading morph")}
       morphlist = loadMorphData(spp,doGENE)
@@ -1014,7 +1016,7 @@ runGDMs = function(doimp = F, doPCA = F,doGENE = F,whichpca = 1,univariate = T,d
       morphspp = morphlist[[3]]
       setwd("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/")
       
-      modelstring2 = paste(spp,"_",prefix,"_modelparameters",suffix,".txt",sep = "") 
+      
       
       path1="/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/"
       path2=paste(path1,"GDM_results/",sep="")
@@ -1022,9 +1024,7 @@ runGDMs = function(doimp = F, doPCA = F,doGENE = F,whichpca = 1,univariate = T,d
       path4=paste(path2,"biivariate/",sep="")
       path5=paste(path2,"multivariate/",sep="")
       
-      if(file.exists(modelstring2) && overwrite==F) {
-        print("SKIPPING")
-      } else {
+      
       
       if(verbose==T){print("loading environment")
         print(head(morphlocs))
@@ -1435,25 +1435,29 @@ numenvpcs=3;
 
 combinations = c(combn(2:length(matList),1,simplify = F),
                  combn(2:length(matList),2,simplify = F),
-                 combn(2:length(matList),3,simplify = F),
-                 combn(2:length(matList),4,simplify = F),
-                 combn(2:length(matList),5,simplify = F),
-                 combn(2:length(matList),6,simplify = F))
+                 combn(2:length(matList),3,simplify = F)
+                 #,
+                 #combn(2:length(matList),4,simplify = F),
+                 #combn(2:length(matList),5,simplify = F),
+                 #combn(2:length(matList),6,simplify = F)
+                 )
+
+#combinations = c(combn(2:length(matList),1,simplify = F))
 
 
-for(combo in combinations){
-  tempmat = matList[c(1,combo)]
-color_chroms = c("black","#1B9E77","#7570B3","#D95F02")
-for(spp in c("FLAVICEPS","BELLII","BILINEATA")){
-for (i in 1:length(color_chroms)){
-  print(color_chroms[i])
-  genedistmatrix = paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER2_GENOMES/ANALYSIS/called_geno/SPECIES/DISTS/",spp,"_distancematrix_",color_chroms[i],".csv",sep="")
-  runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
-          univariate = F,dogeo = F,doChroms = T,
-          whichchrom=color_chroms[i],matList=tempmat,spplist=spp,doEnvpcs=F,
-          verbose=T,numenvpcs=3,genedistmatrix=genedistmatrix)
-}
-}
+for(combo in sample(combinations[c(1:11,22:25)])){
+  tempmat = matList[unique(c(1,combo))]
+  color_chroms = c("black","#1B9E77","#7570B3","#D95F02","empty")
+  for(spp in sample(c("FLAVICEPS","BELLII"))){
+    for (i in sample(1:length(color_chroms))){
+      print(color_chroms[i])
+      genedistmatrix = paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER2_GENOMES/ANALYSIS/called_geno/SPECIES/DISTS/",spp,"_distancematrix_",color_chroms[i],".csv",sep="")
+      runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+              univariate = F,dogeo = F,doChroms = T,
+              whichchrom=color_chroms[i],matList=tempmat,spplist=spp,doEnvpcs=F,
+              verbose=T,numenvpcs=3,genedistmatrix=genedistmatrix,overwrite=F)
+    }
+  }
 }
 
 
@@ -1524,10 +1528,10 @@ for (matlist_index in 2:length(matList)){
               whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
               verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
       for(chrom in sample(chromlist)){
-      runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
-              univariate = F,dogeo = F,doChroms = T,
-              whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
-              verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
+        runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+                univariate = F,dogeo = F,doChroms = T,
+                whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
+                verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
       }
       runGDMs(doimp = F,doPCA = F,doGENE = F,whichpca = 1,
               univariate = F,dogeo = F,doChroms = F,
