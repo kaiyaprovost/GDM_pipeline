@@ -1,13 +1,19 @@
 ## DROP THE MIX IN THE UNI AND BIV
-
+rm(list=ls())
 setwd("~")
 
+do_process=F
+do_uni=F
+do_bi=T
+do_combine=F
+## process from the raw files
+if (do_process==T) {
 #outfile = "/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/GDM_results/multivariate/extracting_best_column.alltogether"
-outfile = "extracting_best_column.alltogether"
+outfile = "extracting_best_column_fusca_9march2021.alltogether"
 
 #setwd("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/")
 
-files = list.files(path="/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/GDM_results/",
+files = list.files(path="/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/lostruct_gdms/",
                    pattern="variable_deviance",recursive=T,full.names = T)
 ## test is morph only
 
@@ -300,9 +306,10 @@ barplot(as.numeric(as.character(imps$`Percent deviance explained`)),
         #density=35,
         #angle=c(0,45,90,-45)[(as.numeric(as.factor(imps$VARIABLE)))]
 )
-
+}
 
 ## with the new data univariates
+if (do_uni==T) {
 #uni = read.csv("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/GDM_results/univariate/univariate_gdm_results.csv",
 #               sep=",",skip = 1)
 uni = read.table("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/GDM_results/bivariate/bivariate_gdm_results.csv",
@@ -420,6 +427,8 @@ uni = read.table("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Di
   grey=brewcols[8]
   black="#000000"
   
+  ## CHANGE CODE SO IBB IS ORANGE
+  
   colors_1mod = c(purple,blue,yellow,red,black,gold,orange,grey,green)
   colors_maxmod = c(gold,purple,yellow,blue,black,green,red,orange,grey)
   
@@ -427,7 +436,7 @@ uni = read.table("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Di
     temp= uni_trimmed[,c("DATASET","MOSTA.1MODEL","MAX.NOSTR")]
     temp$MOSTA.1MODEL[is.na(temp$MAX.NOSTR)] = "ZERO"
     
-    png("proportions2.png",width=800)
+    png("proportions2_13may2021.png",width=800)
     par(mar=c(4,2,1,0))
     barplot(t(table(temp[,c("DATASET","MOSTA.1MODEL")])),
             col=c(purple,blue,yellow,red,black,"white"),
@@ -444,7 +453,7 @@ uni = read.table("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Di
     
     barplot(full_vals,beside=T)
     
-    png(paste("pie.png",sep=""),height=200,width=750)
+    png(paste("pie_13may2021.png",sep=""),height=200,width=750)
     par(mfrow=c(1,3),mar=c(0,0,0,0))
     pie(ibds_vals,ibds_labs,col=c("blue","red","orange","yellow",
                                   "green","cyan","purple"),clockwise=T,
@@ -465,7 +474,7 @@ uni = read.table("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Di
     rownames(x) = labels
     
     y = prop.table(x,2)
-    png("proportions.png")
+    png("proportions_13may2021.png")
     barplot(y,col=c(purple,blue,yellow,red,black),
             names=c("Chromosomes\nN=333","Genome\nN=6","Morphology\nN=37"))
     dev.off()
@@ -502,7 +511,7 @@ uni = read.table("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Di
     most3mod = unique(namecol3)[,2]
     
     
-    png(paste(spp,"_percent_explained.png",sep=""),width=480*1.5)
+    png(paste(spp,"_percent_explained_13may2021.png",sep=""),width=480*1.5)
     par(#mfrow=c(2,1),
       xpd=TRUE,mar=c(3,4,3,0))
     x = barplot(df$MAX.NOSTR,ylab=paste(spp,"% Explained"),cex.names=0.75,cex.axis=0.75,
@@ -600,7 +609,7 @@ uni = read.table("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Di
       # dev.off()
     }
     
-    png(paste(spp,"_percent_explained_1mod.png",sep=""),width=480*1.5)
+    png(paste(spp,"_percent_explained_1mod_13may2021.png",sep=""),width=480*1.5)
     par(mfrow=c(1,1),xpd=TRUE,mar=c(5,4,0.5,0))
     x = barplot(df$MAX.NOSTR,ylab=paste(spp,"% Explained"),cex.names=0.75,cex.axis=0.75,
                 las=2,names=df$DATASET,
@@ -616,7 +625,7 @@ uni = read.table("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Di
     
     palette(colors_maxmod)
     
-    png(paste(spp,"_percent_explained_maxmodel.png",sep=""),width=480*1.5)
+    png(paste(spp,"_percent_explained_maxmodel_13may2021.png",sep=""),width=480*1.5)
     par(mfrow=c(1,1),xpd=TRUE,mar=c(5,4,0.5,0))
     x = barplot(df$MAX.NOSTR,ylab=paste(spp,"% Explained"),cex.names=0.75,cex.axis=0.75,
                 las=2,names=df$DATASET,
@@ -630,7 +639,7 @@ uni = read.table("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Di
            fill=most2mod)
     dev.off()
     
-    png(paste(spp,"_percent_explained_maxmodel_STR.png",sep=""),width=480*1.5)
+    png(paste(spp,"_percent_explained_maxmodel_STR_13may2021.png",sep=""),width=480*1.5)
     par(mfrow=c(1,1),xpd=TRUE,mar=c(5,4,0.5,0))
     x = barplot(df$MAX,ylab=paste(spp,"% Explained"),cex.names=0.75,cex.axis=0.75,
                 las=2,names=df$DATASET,
@@ -646,7 +655,7 @@ uni = read.table("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Di
     
     palette(colors_1mod)
     
-    png(paste(spp,"_percent_explained_1mod_noIBD.png",sep=""),width=480*1.5)
+    png(paste(spp,"_percent_explained_1mod_noIBD_13may2021.png",sep=""),width=480*1.5)
     par(mfrow=c(1,1),xpd=TRUE,mar=c(5,4,0.5,0))
     x = barplot(df$MAX.NOSTR,ylab=paste(spp,"% Explained"),cex.names=0.75,cex.axis=0.75,
                 las=2,names=df$DATASET,
@@ -660,7 +669,7 @@ uni = read.table("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Di
            fill=most1mod)
     dev.off()
     
-    png(paste(spp,"_percent_explained_1mod_scaled.png",sep=""),width=480*1.5)
+    png(paste(spp,"_percent_explained_1mod_scaled_13may2021.png",sep=""),width=480*1.5)
     par(mfrow=c(1,1),xpd=TRUE,mar=c(5,4,0.5,0))
     x = barplot(df$MAX.NOSTR,ylab=paste(spp,"% Explained"),cex.names=0.75,cex.axis=0.75,
                 las=2,names=df$DATASET,ylim=c(0,100),
@@ -699,7 +708,7 @@ uni = read.table("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Di
     namesmost1mod = unique(namecol1)[,1]
     most1mod = unique(namecol1)[,2]
     
-    png(paste(spp,"_percent_explained_STR.png",sep=""),width=480*1.5)
+    png(paste(spp,"_percent_explained_STR_13may2021.png",sep=""),width=480*1.5)
     par(#mfrow=c(2,1),
       xpd=TRUE,mar=c(3,4,3,0))
     x = barplot(df$MAX,ylab=paste(spp,"% Explained"),cex.names=0.75,cex.axis=0.75,
@@ -797,7 +806,7 @@ uni = read.table("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Di
       # dev.off()
     }
     
-    png(paste(spp,"_percent_explained_1mod_STR.png",sep=""),width=480*1.5)
+    png(paste(spp,"_percent_explained_1mod_STR_13may2021.png",sep=""),width=480*1.5)
     par(mfrow=c(1,1),xpd=TRUE,mar=c(5,4,0.5,0))
     x = barplot(df$MAX,ylab=paste(spp,"% Explained"),cex.names=0.75,cex.axis=0.75,
                 las=2,names=df$DATASET,
@@ -812,7 +821,7 @@ uni = read.table("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Di
     dev.off()
     
     
-    png(paste(spp,"_percent_explained_1mod_noIBD_STR.png",sep=""),width=480*1.5)
+    png(paste(spp,"_percent_explained_1mod_noIBD_STR_13may2021.png",sep=""),width=480*1.5)
     par(mfrow=c(1,1),xpd=TRUE,mar=c(5,4,0.5,0))
     x = barplot(df$MAX,ylab=paste(spp,"% Explained"),cex.names=0.75,cex.axis=0.75,
                 las=2,names=df$DATASET,
@@ -826,7 +835,7 @@ uni = read.table("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Di
            fill=most1mod)
     dev.off()
     
-    png(paste(spp,"_percent_explained_1mod_scaled_STR.png",sep=""),width=480*1.5)
+    png(paste(spp,"_percent_explained_1mod_scaled_STR_13may2021.png",sep=""),width=480*1.5)
     par(mfrow=c(1,1),xpd=TRUE,mar=c(5,4,0.5,0))
     x = barplot(df$MAX,ylab=paste(spp,"% Explained"),cex.names=0.75,cex.axis=0.75,
                 las=2,names=df$DATASET,ylim=c(0,100),
@@ -967,7 +976,7 @@ uni = read.table("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Di
     if(do_ibd==F){suffix="noIBD"} else {suffix=""}
     if(do_str==T){prefix="STR"} else {prefix=""}
     
-    png(paste("heatmap_gdm_results",suffix,prefix,"all.png",sep="_"),width=900)
+    png(paste("heatmap_gdm_results",suffix,prefix,"all_13may2021.png",sep="_"),width=900)
     par(mfrow=c(1,1),xpd=TRUE,mar=c(5,10,6,1))
     image((dttn),col=c(purple,blue,yellow,red,black),
           xaxt="n",yaxt="n")
@@ -1025,7 +1034,7 @@ uni = read.table("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Di
     colnames(colff) = colnames(colmat)
     rownames(colff) = rownames(colmat)
     
-    png(paste("heatmap_gdm_results",suffix,prefix,"all_transparent.png",sep="_"),width=900)
+    png(paste("heatmap_gdm_results",suffix,prefix,"all_transparent_13may2021.png",sep="_"),width=900)
     #layout(matrix(1:2,ncol=2), width = c(5,1),height = c(1,1))
     layout(t(matrix(c(1,3,1,3,1,2,1,2,1,3,1,3),nrow=2)), width = c(6,1),height = c(1,1))
     par(#mfrow=c(1,1),
@@ -1056,15 +1065,17 @@ uni = read.table("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Di
   dtter = raster(t(as.matrix(dtte)))
   dttnr
 }
+}
 
 #####
-
+if(do_bi==T){
 ## with the new data bivariates
 bi = read.csv("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/GDM_results/bivariate/bivariate_gdm_results.csv",
-              sep="\t",skip = 0,stringsAsFactors = F)
+              sep=",",skip = 0,stringsAsFactors = F)
 ## check for missing data stuff
-bi = bi[bi$NUMERICDATASET!=1,]
+#bi = bi[bi$NUMERICDATASET!=1,] ## chromosome 1 for whatever reason is not working -- probably need to redo them 
 
+{
 # boxplot(bi$PERCENT_MISSING~bi$MOST.1MODEL1,las=2,
 #         notch=F,varWidth=T)
 # boxplot(bi$PERCENT_MISSING~bi$SPECIES,las=2)
@@ -1100,7 +1111,7 @@ bi = bi[bi$NUMERICDATASET!=1,]
 #           notch=F,varWidth=T,xlab="",ylab=unique(bi$SPECIES)[i])
 # }
 # dev.off()
-
+}
 {
 bi_trimmed = bi[,c("DATASET","SPECIES",
                    "MOSTA.1MODEL1","MOSTA.1MODEL2","MOSTA.1MODEL3",
@@ -1203,7 +1214,7 @@ for (spp in unique(bi_trimmed$SPECIES)) {
   
   palette(colors_1mod)
   
-  png(paste(spp,"_percent_explained_maxmodel_bivariate.png",sep=""),width=480*1.5)
+  png(paste(spp,"_percent_explained_maxmodel_bivariate_13may2021.png",sep=""),width=480*1.5)
   par(mfrow=c(1,1),xpd=TRUE,mar=c(5,4,0.5,0))
   x = barplot(df$MAX,ylab=paste(spp,"% Explained"),cex.names=0.75,cex.axis=0.75,
               las=2,names=df$DATASET,
@@ -1226,7 +1237,7 @@ for (spp in unique(bi_trimmed$SPECIES)) {
   namesmost1mod = unique(namecol1)[,1]
   most1mod = unique(namecol1)[,2]
   
-  png(paste(spp,"_percent_explained_bivariate.png",sep=""),width=480*1.5)
+  png(paste(spp,"_percent_explained_bivariate_13may2021.png",sep=""),width=480*1.5)
   par(xpd=TRUE,mar=c(3,4,3,0))
   x = barplot(df$MAX,ylab=paste(spp,"% Explained"),cex.names=0.75,cex.axis=0.75,
               las=2,names=df$DATASET,
@@ -1238,7 +1249,7 @@ for (spp in unique(bi_trimmed$SPECIES)) {
   
   palette(colors_1mod)
   
-  png(paste(spp,"_percent_explained_1mod_bivariate.png",sep=""),width=480*1.5)
+  png(paste(spp,"_percent_explained_1mod_bivariate_13may2021.png",sep=""),width=480*1.5)
   par(mfrow=c(1,1),xpd=TRUE,mar=c(5,4,0.5,0))
   x = barplot(df$MAX,ylab=paste(spp,"% Explained"),cex.names=0.75,cex.axis=0.75,
               las=2,names=df$DATASET,
@@ -1248,7 +1259,7 @@ for (spp in unique(bi_trimmed$SPECIES)) {
          fill=most1mod)
   dev.off()
   
-  png(paste(spp,"_percent_explained_1mod_scaled_bivariate.png",sep=""),width=480*1.5)
+  png(paste(spp,"_percent_explained_1mod_scaled_bivariate_13may2021.png",sep=""),width=480*1.5)
   par(mfrow=c(1,1),xpd=TRUE,mar=c(5,4,0.5,0))
   x = barplot(df$MAX,ylab=paste(spp,"% Explained"),cex.names=0.75,cex.axis=0.75,
               las=2,names=df$DATASET,ylim=c(0,100),
@@ -1280,18 +1291,39 @@ dx$SCALEDMAX[is.na(dx$SCALEDMAX)] = 0
 maximumvalue=75
 
 dtt = table(bi_trimmed[,c("DATASET","SPECIES")])
+dtt=dtt[rownames(dtt)!="",colnames(dtt)!=""]
 dttn = dtt
 dtte = dtt
 
 dx$MOSTA.1MODEL.F = as.factor(dx$MOSTA.1MODEL)
-levels(dx$MOSTA.1MODEL.F) = c("IBA","IBD","IBE","IBH","MIXED")
+#levels(dx$MOSTA.1MODEL.F) = c("IBA","IBB","IBD","IBE","IBH","MIXED") ## CHANGED to add IBB
 
-dx$MOSTA.1MODEL.COLOR = as.numeric((dx$MOSTA.1MODEL.F))
-
-if(datanum>=3) {
-  dx$MOSTA.1MODEL.COLOR[dx$MOSTA.1MODEL.COLOR==4] = 5
-  dx$MOSTA.1MODEL.COLOR[dx$MOSTA.1MODEL.COLOR==3] = 4
+if(datanum==1){
+  colorlist = c(purple,orange,blue,yellow,red,black)
+  dx$MOSTA.1MODEL.COLOR = as.numeric(as.factor(dx$MOSTA.1MODEL.F))
+  dx$MOSTA.1MODEL.COLOR[dx$MOSTA.1MODEL.F=="IBA"] = 1 ## purple
+  dx$MOSTA.1MODEL.COLOR[dx$MOSTA.1MODEL.F=="IBB"] = 2 ## orange
+  dx$MOSTA.1MODEL.COLOR[dx$MOSTA.1MODEL.F=="IBD"] = 3 ## blue
+  dx$MOSTA.1MODEL.COLOR[dx$MOSTA.1MODEL.F=="IBE"] = 4 ## yellow
+  dx$MOSTA.1MODEL.COLOR[dx$MOSTA.1MODEL.F=="IBH"] = 5 ## red
+  dx$MOSTA.1MODEL.COLOR[dx$MOSTA.1MODEL.F=="MIXED"] = 6 ## black
+} else if (datanum==2) {
+  colorlist = c(purple,blue,yellow,red,black)
+  dx$MOSTA.1MODEL.COLOR = as.numeric(as.factor(dx$MOSTA.1MODEL.F))
+  dx$MOSTA.1MODEL.COLOR[dx$MOSTA.1MODEL.F=="IBA"] = 1 ## purple
+  dx$MOSTA.1MODEL.COLOR[dx$MOSTA.1MODEL.F=="IBD"] = 2 ## blue
+  dx$MOSTA.1MODEL.COLOR[dx$MOSTA.1MODEL.F=="IBE"] = 3 ## yellow
+  dx$MOSTA.1MODEL.COLOR[dx$MOSTA.1MODEL.F=="IBH"] = 4 ## red
+  dx$MOSTA.1MODEL.COLOR[dx$MOSTA.1MODEL.F=="MIXED"] = 5 ## black
+} else if (datanum==3) {
+  colorlist = c(purple,yellow,red,black)
+  dx$MOSTA.1MODEL.COLOR = as.numeric(as.factor(dx$MOSTA.1MODEL.F))
+  dx$MOSTA.1MODEL.COLOR[dx$MOSTA.1MODEL.F=="IBA"] = 1 ## purple
+  dx$MOSTA.1MODEL.COLOR[dx$MOSTA.1MODEL.F=="IBE"] = 2 ## yellow
+  dx$MOSTA.1MODEL.COLOR[dx$MOSTA.1MODEL.F=="IBH"] = 3 ## red
+  dx$MOSTA.1MODEL.COLOR[dx$MOSTA.1MODEL.F=="MIXED"] = 4 ## black
 }
+
 
 for(ri in 1:nrow(dtt)) {
   for(ci in 1:ncol(dtt)) {
@@ -1299,25 +1331,33 @@ for(ri in 1:nrow(dtt)) {
     
     variable = rownames(dtt)[ri]
     species = colnames(dtt)[ci]
+    print(paste(variable,species))
+    
+    if(variable!="" & species !=""){
     
     entry = dx[dx$DATASET==variable,]
     entry = entry[entry$SPECIES==species,]
     
     entry_1 = as.character(as.factor(entry$MOSTA.1MODEL.F))
-    entry_2 = entry$MOSTA.1MODEL.COLOR
+    entry_2 = as.numeric(entry$MOSTA.1MODEL.COLOR)
     
     entry_3 = as.numeric(as.character(entry$SCALEDMAX))
-    if(is.na(entry_3)){
+    if(length(entry_3) == 0){
+      entry_3 = 0
+    } else if(is.na(entry_3)){
       entry_3 = 0
     }
     dtt[ri,ci] = entry_1
-    dttn[ri,ci] = entry_2
+    dttn[ri,ci] = as.numeric(entry_2)
     dtte[ri,ci] = entry_3
     
   }
 }
-
+}
 toordercols = c(2,3,9,8,6,10,1,7,5,4)
+
+dims=dim(dttn)
+dttn=matrix(as.numeric(dttn),nrow=dims[1],ncol=dims[2])
 
 dtt=dtt[,toordercols]
 dttn=dttn[,toordercols]
@@ -1334,25 +1374,80 @@ rownames(fx) = rownames(dtt)
 fxd = as.data.frame(fx)
 
 #use labels to assign colors
-col<-c("IBA"="black","IBE"="red","IBD"="blue",
-       "IBH"="yellow","MIXED"="grey")
+col<-c("IBA"="purple","IBE"="yellow","IBD"="blue",
+       "IBH"="red","MIXED"="black","IBB"="orange")
 
 imgflip<-function(x) {t(x[nrow(x):1,])}
 
-png(paste("heatmap_gdm_results",datanum,"_bivariate_all.png",sep="_"),width=900)
+png(paste("heatmap_gdm_results",datanum,"bivariate_all_13may2021.png",sep="_"),width=900)
 par(mfrow=c(1,1),xpd=TRUE,mar=c(5,10,6,1))
 
-if(datanum <=2){
-  colorlist=c(purple,blue,yellow,red,black)
-} else {
-  colorlist=c(purple,yellow,blue,red,black)
-}
+
 image((dttn),col=colorlist,
       xaxt="n",yaxt="n")
 axis(3,at=seq(0,1,length.out=nrow(dtt)),
      labels=(rownames(fx)),las=2)
 axis(2,at=seq(0,1,length.out=ncol(dtt)),
      labels=(colnames(fx)),las=2)
+legend(x = 0,y=-0.1,legend=levels(ff),ncol = 5,
+       bty="n",
+       fill=colorlist)
+dev.off()
+
+## make one that's just subsets
+genes_subset=c(1:36)
+fst_subset = c(37:39)
+## genome is 40
+lostruct_subset=c(41:45)
+morph_subset = c(46:49)
+
+png(paste("heatmap_gdm_results",datanum,"bivariate_GENES_13may2021.png",sep="_"),width=900)
+par(mfrow=c(1,1),xpd=TRUE,mar=c(5,10,6,1))
+image((dttn[genes_subset,]),col=colorlist,
+      xaxt="n",yaxt="n")
+axis(3,at=seq(0,1,length.out=nrow(dtt[genes_subset,])),
+     labels=(rownames(fx[genes_subset,])),las=2)
+axis(2,at=seq(0,1,length.out=ncol(dtt[genes_subset,])),
+     labels=(colnames(fx[genes_subset,])),las=2)
+legend(x = 0,y=-0.1,legend=levels(ff),ncol = 5,
+       bty="n",
+       fill=colorlist)
+dev.off()
+
+png(paste("heatmap_gdm_results",datanum,"bivariate_FST_13may2021.png",sep="_"),width=900)
+par(mfrow=c(1,1),xpd=TRUE,mar=c(5,10,6,1))
+image((dttn[fst_subset,]),col=colorlist,
+      xaxt="n",yaxt="n")
+axis(3,at=seq(0,1,length.out=nrow(dtt[fst_subset,])),
+     labels=(rownames(fx[fst_subset,])),las=2)
+axis(2,at=seq(0,1,length.out=ncol(dtt[fst_subset,])),
+     labels=(colnames(fx[fst_subset,])),las=2)
+legend(x = 0,y=-0.1,legend=levels(ff),ncol = 5,
+       bty="n",
+       fill=colorlist)
+dev.off()
+
+png(paste("heatmap_gdm_results",datanum,"bivariate_LOSTRUCT_13may2021.png",sep="_"),width=900)
+par(mfrow=c(1,1),xpd=TRUE,mar=c(5,10,6,1))
+image((dttn[lostruct_subset,]),col=colorlist,
+      xaxt="n",yaxt="n")
+axis(3,at=seq(0,1,length.out=nrow(dtt[lostruct_subset,])),
+     labels=(rownames(fx[lostruct_subset,])),las=2)
+axis(2,at=seq(0,1,length.out=ncol(dtt[lostruct_subset,])),
+     labels=(colnames(fx[lostruct_subset,])),las=2)
+legend(x = 0,y=-0.1,legend=levels(ff),ncol = 5,
+       bty="n",
+       fill=colorlist)
+dev.off()
+
+png(paste("heatmap_gdm_results",datanum,"bivariate_MORPH_13may2021.png",sep="_"),width=900)
+par(mfrow=c(1,1),xpd=TRUE,mar=c(5,10,6,1))
+image((dttn[morph_subset,]),col=colorlist,
+      xaxt="n",yaxt="n")
+axis(3,at=seq(0,1,length.out=nrow(dtt[morph_subset,])),
+     labels=(rownames(fx[morph_subset,])),las=2)
+axis(2,at=seq(0,1,length.out=ncol(dtt[morph_subset,])),
+     labels=(colnames(fx[morph_subset,])),las=2)
 legend(x = 0,y=-0.1,legend=levels(ff),ncol = 5,
        bty="n",
        fill=colorlist)
@@ -1382,7 +1477,7 @@ fx<-matrix(as.numeric(imgcolors), ncol=ncol(dtt))
 colnames(fx) = colnames(dtt)
 rownames(fx) = rownames(dtt)
 
-colmat = sapply(c(purple,blue,yellow,red,black),FUN=function(ramp){
+colmat = sapply(colorlist,FUN=function(ramp){
   trans = paste(ramp,"64",sep="") ## 32 for 50, 64 for 100
   solid = paste(ramp,"FF",sep="")
   colfunc <- colorRampPalette(c(solid, trans),alpha=T)
@@ -1401,20 +1496,20 @@ colcol = as.numeric(colmatf)
 colff<-matrix(as.numeric(colcol), ncol=ncol(colmat))
 colnames(colff) = colnames(colmat)
 rownames(colff) = rownames(colmat)
-
-png(paste("heatmap_legend.png",sep="_"),width=250)
+if(datanum==1){
+png(paste("heatmap_legend_13may2021.png",sep="_"),width=250)
 par(mar=c(4,4,4,4))
 image(colff,col=levels(colmatf),
       xaxt="n",yaxt="n",main="% Explained\n")
 axis(3,at=seq(0,1,length.out=6),
      labels=round(seq(maximumvalue,0,length.out=6)),las=1,
      cex=0.8)
-axis(2,at=seq(0,1,length.out=5),
-     labels=c("IBA","IBD","IBE","IBH","MIX"),las=2)
-
+axis(2,at=seq(0,1,length.out=6),
+     labels=c("IBA","IBB","IBD","IBE","IBH","MIX"),las=2)
 dev.off()
+}
 
-png(paste("heatmap_gdm_results",datanum,"_bivariate_all_transparent.png",sep="_"),width=900)
+png(paste("heatmap_gdm_results",datanum,"bivariate_all_transparent_13may2021.png",sep="_"),width=900)
 layout(t(matrix(c(1,3,1,3,1,2,1,2,1,3,1,3),nrow=2)), width = c(6,1),height = c(1,1))
 par(xpd=TRUE,mar=c(1,3,6,1))
 image(fx,col=levels(transp_f),
@@ -1430,10 +1525,119 @@ image(colff,col=levels(colmatf),
       xaxt="n",yaxt="n",main="% Explained")
 axis(3,at=seq(0,1,length.out=6),
      labels=round(seq(maximumvalue,0,length.out=6)),las=2)
-axis(2,at=seq(0,1,length.out=5),
-     labels=c("IBA","IBD","IBE","IBH","MIX"),las=2)
+axis(2,at=seq(0,1,length.out=6),
+     labels=c("IBA","IBB","IBD","IBE","IBH","MIX"),las=2)
 dev.off()
 ##64-FF
+
+## make one that's just subsets
+
+png(paste("heatmap_gdm_results",datanum,"bivariate_GENES_transparent_13may2021.png",sep="_"),width=900)
+layout(t(matrix(c(1,3,1,3,1,2,1,2,1,3,1,3),nrow=2)), width = c(6,1),height = c(1,1))
+par(xpd=TRUE,mar=c(1,3,6,1))
+image(fx[genes_subset,],col=levels(transp_f),
+      xaxt="n",yaxt="n")
+axis(3,at=seq(0,1,length.out=nrow(dtt[genes_subset,])),
+     labels=(rownames(fx[genes_subset,])),las=2)
+axis(2,at=seq(0,1,length.out=ncol(dtt[genes_subset,])),
+     labels=substr(colnames(fx[genes_subset,]),1,3),las=2)
+legend(x = 0,y=-0.1,legend=levels(ff),ncol = 5,
+       bty="n",
+       fill=colorlist)
+image(colff,col=levels(colmatf),
+      xaxt="n",yaxt="n",main="% Explained")
+axis(3,at=seq(0,1,length.out=6),
+     labels=round(seq(maximumvalue,0,length.out=6)),las=2)
+axis(2,at=seq(0,1,length.out=6),
+     labels=c("IBA","IBB","IBD","IBE","IBH","MIX"),las=2)
+dev.off()
+
+
+png(paste("heatmap_gdm_results",datanum,"bivariate_FST_transparent_13may2021.png",sep="_"),width=900)
+layout(t(matrix(c(1,3,1,3,1,2,1,2,1,3,1,3),nrow=2)), width = c(6,1),height = c(1,1))
+par(xpd=TRUE,mar=c(1,3,6,1))
+image(fx[fst_subset,],col=levels(transp_f),
+      xaxt="n",yaxt="n")
+axis(3,at=seq(0,1,length.out=nrow(dtt[fst_subset,])),
+     labels=(rownames(fx[fst_subset,])),las=2)
+axis(2,at=seq(0,1,length.out=ncol(dtt[fst_subset,])),
+     labels=substr(colnames(fx[fst_subset,]),1,3),las=2)
+legend(x = 0,y=-0.1,legend=levels(ff),ncol = 5,
+       bty="n",
+       fill=colorlist)
+image(colff,col=levels(colmatf),
+      xaxt="n",yaxt="n",main="% Explained")
+axis(3,at=seq(0,1,length.out=6),
+     labels=round(seq(maximumvalue,0,length.out=6)),las=2)
+axis(2,at=seq(0,1,length.out=6),
+     labels=c("IBA","IBB","IBD","IBE","IBH","MIX"),las=2)
+dev.off()
+
+png(paste("heatmap_gdm_results",datanum,"bivariate_LOSTRUCT_transparent_13may2021.png",sep="_"),width=900)
+layout(t(matrix(c(1,3,1,3,1,2,1,2,1,3,1,3),nrow=2)), width = c(6,1),height = c(1,1))
+par(xpd=TRUE,mar=c(1,3,6,1))
+image(fx[lostruct_subset,],col=levels(transp_f),
+      xaxt="n",yaxt="n")
+axis(3,at=seq(0,1,length.out=nrow(dtt[lostruct_subset,])),
+     labels=(rownames(fx[lostruct_subset,])),las=2)
+axis(2,at=seq(0,1,length.out=ncol(dtt[lostruct_subset,])),
+     labels=substr(colnames(fx[lostruct_subset,]),1,3),las=2)
+legend(x = 0,y=-0.1,legend=levels(ff),ncol = 5,
+       bty="n",
+       fill=colorlist)
+image(colff,col=levels(colmatf),
+      xaxt="n",yaxt="n",main="% Explained")
+axis(3,at=seq(0,1,length.out=6),
+     labels=round(seq(maximumvalue,0,length.out=6)),las=2)
+axis(2,at=seq(0,1,length.out=6),
+     labels=c("IBA","IBB","IBD","IBE","IBH","MIX"),las=2)
+dev.off()
+
+png(paste("heatmap_gdm_results",datanum,"bivariate_GENOME_transparent_13may2021.png",sep="_"),width=900)
+layout(t(matrix(c(1,3,1,3,1,2,1,2,1,3,1,3),nrow=2)), width = c(6,1),height = c(1,1))
+par(xpd=TRUE,mar=c(1,3,6,1))
+image(fx[c(40,40),],col=levels(transp_f),
+      xaxt="n",yaxt="n")
+axis(3,at=seq(0,1,length.out=nrow(dtt[c(40,40),])),
+     labels=(rownames(fx[c(40,40),])),las=2)
+axis(2,at=seq(0,1,length.out=ncol(dtt[c(40,40),])),
+     labels=substr(colnames(fx[c(40,40),]),1,3),las=2)
+legend(x = 0,y=-0.1,legend=levels(ff),ncol = 5,
+       bty="n",
+       fill=colorlist)
+image(colff,col=levels(colmatf),
+      xaxt="n",yaxt="n",main="% Explained")
+axis(3,at=seq(0,1,length.out=6),
+     labels=round(seq(maximumvalue,0,length.out=6)),las=2)
+axis(2,at=seq(0,1,length.out=6),
+     labels=c("IBA","IBB","IBD","IBE","IBH","MIX"),las=2)
+dev.off()
+
+
+png(paste("heatmap_gdm_results",datanum,"bivariate_MORPH_transparent_13may2021.png",sep="_"),width=900)
+layout(t(matrix(c(1,3,1,3,1,2,1,2,1,3,1,3),nrow=2)), width = c(6,1),height = c(1,1))
+par(xpd=TRUE,mar=c(1,3,6,1))
+image(fx[morph_subset,],col=levels(transp_f),
+      xaxt="n",yaxt="n")
+axis(3,at=seq(0,1,length.out=nrow(dtt[morph_subset,])),
+     labels=(rownames(fx[morph_subset,])),las=2)
+axis(2,at=seq(0,1,length.out=ncol(dtt[morph_subset,])),
+     labels=substr(colnames(fx[morph_subset,]),1,3),las=2)
+legend(x = 0,y=-0.1,legend=levels(ff),ncol = 5,
+       bty="n",
+       fill=colorlist)
+image(colff,col=levels(colmatf),
+      xaxt="n",yaxt="n",main="% Explained")
+axis(3,at=seq(0,1,length.out=6),
+     labels=round(seq(maximumvalue,0,length.out=6)),las=2)
+axis(2,at=seq(0,1,length.out=6),
+     labels=c("IBA","IBB","IBD","IBE","IBH","MIX"),las=2)
+dev.off()
+
+
+
+
+
 }
 
 fillsx = matrix(fills[dttn],ncol=ncol(dttn),nrow=nrow(dttn))
@@ -1443,7 +1647,9 @@ dttnr = raster::raster(t(as.matrix(dttn)))
 dtter = raster::raster(t(as.matrix(dtte)))
 dttnr
 }
+}
 
+if(do_combine==T){
 #####
 
 newdf=read.table("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/GDM_results/multivariate/extracting_best_column.alltogether",
@@ -1590,3 +1796,5 @@ dev.off()
 
 corrplot::corrplot(dtt,is.corr=F,method="color",
                    col=c(viridis::viridis(100),rev(viridis::viridis(100))))
+
+}
