@@ -145,15 +145,34 @@ plot(watersheds,add=F,lwd=2)
 library(raster)
 library(rgdal)
 ext_user=extent(c(-126,-90,18,40))
-path <- readOGR(dsn = "/Users/kprovost/Dropbox (AMNH)/Dissertation/WCD_from_Ed_1236_4iouz24kv_ConDivides.gpx", layer = "tracks")
-waypoints <- readOGR(dsn = "/Users/kprovost/Dropbox (AMNH)/Dissertation/WCD_from_Ed_1236_4iouz24kv_ConDivides.gpx", layer = "track_points")
+path <- readOGR(dsn = "/Users/kprovost/Downloads/WCD_from_Ed_1236_4iouz24kv_ConDivides.gpx", layer = "tracks")
+waypoints <- readOGR(dsn = "/Users/kprovost/Downloads/WCD_from_Ed_1236_4iouz24kv_ConDivides.gpx", layer = "track_points")
 #shapefile("USA_States")->us  #need US state shape
 #shapefile("Mexico_States")->mex  #and Mexico... I can send these too
 #crop(bind(us, mex), ext_user)->NorAmer
 #plot(NorAmer)
 #plot(crop(path, ext_user), add = T, lwd=2, col = "red")
 
+tif=stack("/Users/kprovost/Downloads/Deserts_Bioclim_PrecPCA_From_GDM.tif")
+
+shp=shapefile("/Users/kprovost/Downloads/deserts_north_america_wwf_SONCHI.shp")
+
+tif = crop(tif,extent(shp))
+png("outline_desert_latlong.png",bg=rgb(0,0,0,0))
+plot(tif[[1]],col=rgb(0,0,0,0))
+plot(shp,add=T,col=rgb(0,0,0,0))
+dev.off()
+
+
+png("just_outline_of_deserts_color_6nov2020.png",bg=rgb(0,0,0,0))
+par(mar=c(0,0,0,0))
+plot(shp,col=rgb(0,0,0,0),border=c("green","blue"),lwd=3)
+plot(path,add=T,col=rgb(0.3,0,0),lwd=3,lty=1)
+plot(path,add=T,col="red",lwd=3,lty=2)
+dev.off()
+
 path=crop(path,extent(climpca))
+
 
 #png("Deserts_Bioclim_PCA_CONTINENT.png")
 png("Deserts_Bioclim_PCA_SONCHI.png")
@@ -339,7 +358,7 @@ pred2[,1] = scales::rescale(pred[,1])
 pred2[,2] = scales::rescale(pred[,2])
 pred2[,3] = scales::rescale(pred[,3])
 
-
+ 
 climpca = clim[[1:3]]
 values(climpca) = pred2
 names(climpca)
@@ -418,6 +437,8 @@ for (i in 1:nrow(prec_pca_val)) {
 prec_pca_ras = prec
 values(prec_pca_ras) = as.matrix(prec_pca_val)
 writeRaster(prec_pca_ras,"Deserts_Bioclim_PrecPCA_From_GDM.asc",format="GTiff")
+
+
 
 prec_pca_val[,1] = scales::rescale(prec_pca_val[,1])
 prec_pca_val[,2] = scales::rescale(prec_pca_val[,2])
