@@ -31,7 +31,8 @@ if (doMorph == T) {
     
   }
   
-} else {
+
+  } else {
   
   morph = "/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/CATALOG_BY_SPECIES.txt"
   morphdf = read.csv(morph,sep="\t")

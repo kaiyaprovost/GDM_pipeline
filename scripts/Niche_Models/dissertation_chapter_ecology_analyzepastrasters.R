@@ -56,7 +56,7 @@ for (p in packages) {
   dynamic_require(p)
 }
 
-path = "/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/WORLDCLIM/"
+path = "/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/ECOLOGY/OUTPUTS/3.enms/WORLDCLIM/"
 setwd(path)
 
 specieslist=c(
@@ -64,60 +64,114 @@ specieslist=c(
   "Auriparus flaviceps",
   "Campylorhynchus brunneicapillus",
   "Cardinalis sinuatus",
-  "Melozone crissalis",
+  #"Melozone crissalis",
   "Melozone fusca",
-  "Melozone fusca nominate",
+  #"Melozone fusca nominate",
   "Phainopepla nitens",
   "Polioptila melanura",
   "Toxostoma crissale",
   "Toxostoma curvirostre",
-  "Toxostoma curvirostre nominate",
-  "Toxostoma palmeri",
+  #"Toxostoma curvirostre nominate",
+  #"Toxostoma palmeri",
   "Vireo bellii"
 )
 
 ## stack time slices
-for (spp in specieslist) {
+for (spp in rev(specieslist)) {
   
   print(spp)
+  current_f = list.files(path=path,pattern=paste("Thresh_EqualSensSpec_",spp,"_worldclim.asc$",sep=".+"),recursive = T,full.names = T)[1]
+  current = raster (current_f)
   
-  current = raster(paste("Thresh_EqualSensSpec_BestModel_",spp,"_addedLayers_zoomedin.asc",sep=""))
-  LGM = raster(paste("Thresh_EqualSensSpec_BestModel_",spp,"_addedLayers_LGM.asc",sep=""))
-  MID = raster(paste("Thresh_EqualSensSpec_BestModel_",spp,"_addedLayers_MID.asc",sep=""))
-  stacked = stack(list(current,LGM,MID))
-  png(paste("Thresh_Timestack_",spp,".png",sep=""))
-  plotRGB(stacked, r=1, g=2, b=3,scale=1,colNA="grey")
-  legend(legend=c("Now-Only","LGM-Only","Mid-Only",
-                  "Now-LGM","Now-Mid","LGM-Mid",
-                  "None","All"),
+  LGM_f = list.files(path=path,pattern=paste("Thresh_EqualSensSpec_",spp,"_LGM.asc$",sep=".+"),recursive = T,full.names = T)[1]
+  LGM = raster (LGM_f)
+  
+  MID_f = list.files(path=path,pattern=paste("Thresh_EqualSensSpec_",spp,"_MID.asc$",sep=".+"),recursive = T,full.names = T)[1]
+  MID = raster (MID_f)
+  
+  #current = raster(paste("Thresh_EqualSensSpec_BestModel_",spp,"_addedLayers_zoomedin.asc",sep=""))
+  #LGM = raster(paste("Thresh_EqualSensSpec_BestModel_",spp,"_addedLayers_LGM.asc",sep=""))
+  #MID = raster(paste("Thresh_EqualSensSpec_BestModel_",spp,"_addedLayers_MID.asc",sep=""))
+  # stacked = stack(list(current,LGM,MID))
+  
+  
+  
+  # png(paste("Thresh_Timestack_",spp,".png",sep=""))
+  # plotRGB(stacked, r=1, g=2, b=3,scale=1,colNA="grey")
+  # legend(legend=c("Now-Only","LGM-Only","Mid-Only",
+  #                 "Now-LGM","Now-Mid","LGM-Mid",
+  #                 "None","All"),
+  #        x="right",
+  #        title=spp,
+  #        bty="n",
+  #         fill=c(rgb(1,0,0),rgb(0,1,0),rgb(0,0,1),
+  #                rgb(1,1,0),rgb(1,0,1),rgb(0,1,1),
+  #                rgb(0,0,0),rgb(1,1,1))
+  #        #fill=c("#E31A1C","#33A02C","#1F78B4",
+  #       #        "#FB9A99","#6A3D9A","#A6CEE3",
+  #       #        "black","white")
+  #        )
+  # dev.off()
+  
+  MID_2 = MID
+  values(MID_2)[values(MID_2)==1 & !(is.na(values(MID_2)))] = 2
+  LGM_4 = LGM
+  values(LGM_4)[values(LGM_4)==1 & !(is.na(values(LGM_4)))] = 4
+  
+  summed = current+MID_2+LGM_4
+  
+  png(paste("Thresh_Timestack_",spp,"_difcolors.png",sep=""))
+  plot(summed,col=c(
+    "black", #//
+    "#FF7F00", #C
+    "#FB9A99", #M
+    "#E31A1C", #CM
+    "#1F78B4", #L
+    "#6A3D9A", #CL
+    "#CAB2D6", #ML
+    "grey" #CLM
+    ))
+  legend(legend=c("None","Now-Only","Mid-Only","Now-Mid",
+                  "LGM-Only","Now-LGM","Mid-LGM","All"),
          x="right",
          title=spp,
          bty="n",
-         fill=c(rgb(1,0,0),rgb(0,1,0),rgb(0,0,1),
-                rgb(1,1,0),rgb(1,0,1),rgb(0,1,1),
-                rgb(0,0,0),rgb(1,1,1)))
+         fill=c("black", #//
+                "#FF7F00", #C
+                "#FB9A99", #M
+                "#E31A1C", #CM
+                "#1F78B4", #L
+                "#6A3D9A", #CL
+                "#CAB2D6", #ML
+           "grey" #CLM
+           ))
   dev.off()
   
-  current2 = raster(paste("AddedPredThin_BestModel_",spp,"_addedLayers_zoomedin.asc",sep=""))
-  LGM2 = raster(paste("AddedPredThin_BestModel_",spp,"_addedLayers_LGM.asc",sep=""))
-  MID2 = raster(paste("AddedPredThin_BestModel_",spp,"_addedLayers_MID.asc",sep=""))
-  values(current2) = scales::rescale(values(current2),to=c(0,1))
-  values(LGM2) = scales::rescale(values(LGM2),to=c(0,1))
-  values(MID2) = scales::rescale(values(MID2),to=c(0,1))
-  stacked2 = stack(list(current2,LGM2,MID2))
-  png(paste("Continuous_Timestack_",spp,".png",sep=""))
-  plotRGB(stacked2, r=1, g=2, b=3,scale=1,colNA="grey",stretch="hist",
-          xlab=spp)
-  legend(legend=c("Now-Only","LGM-Only","Mid-Only",
-                  "Now-LGM","Now-Mid","LGM-Mid",
-                  "None","All"),
-         title=spp,
-         x="right",
-         bty="n",
-         fill=c(rgb(1,0,0),rgb(0,1,0),rgb(0,0,1),
-                rgb(1,1,0),rgb(1,0,1),rgb(0,1,1),
-                rgb(0,0,0),rgb(1,1,1)))
-  dev.off()
+  
+  # current2 = raster(paste("AddedPredThin_BestModel_",spp,"_addedLayers_zoomedin.asc",sep=""))
+  # LGM2 = raster(paste("AddedPredThin_BestModel_",spp,"_addedLayers_LGM.asc",sep=""))
+  # MID2 = raster(paste("AddedPredThin_BestModel_",spp,"_addedLayers_MID.asc",sep=""))
+  # values(current2) = scales::rescale(values(current2),to=c(0,1))
+  # values(LGM2) = scales::rescale(values(LGM2),to=c(0,1))
+  # values(MID2) = scales::rescale(values(MID2),to=c(0,1))
+  # stacked2 = stack(list(current2,LGM2,MID2))
+  # png(paste("Continuous_Timestack_",spp,".png",sep=""))
+  # plotRGB(stacked2, r=1, g=2, b=3,scale=1,colNA="grey",stretch="hist",
+  #         xlab=spp)
+  # legend(legend=c("Now-Only","LGM-Only","Mid-Only",
+  #                 "Now-LGM","Now-Mid","LGM-Mid",
+  #                 "None","All"),
+  #        title=spp,
+  #        x="right",
+  #        bty="n",
+  #        # fill=c(rgb(1,0,0),rgb(0,1,0),rgb(0,0,1),
+  #        #        rgb(1,1,0),rgb(1,0,1),rgb(0,1,1),
+  #        #        rgb(0,0,0),rgb(1,1,1))
+  #        fill=c("#E31A1C","#33A02C","#1F78B4",
+  #               "#FB9A99","#6A3D9A","#A6CEE3",
+  #               "black","white")
+  #        )
+  # dev.off()
   
 }
 

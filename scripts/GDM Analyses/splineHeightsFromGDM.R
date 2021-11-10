@@ -2,19 +2,22 @@
 
 
 #outfile = "/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/GDM_results/multivariate/extracting_splines.alltogether"
-outfile="/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/lostruct_gdms/lostruct_splines_2.alltogether"
+outfile="/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/temp.alltogether2.temp"
 
-setwd("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/lostruct_gdms/")
+setwd("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/")
 
-files = list.files(path="/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/lostruct_gdms/",
+files = list.files(path="/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/GDM_results/",
                    pattern="modelparameters",recursive=T,full.names = T)
-
+files = files[!(grepl("BAD",files))]
+files = files[!(grepl("OLD",files))]
+files = files[!(grepl("gz",files))]
 
 newdf=NULL
 
 for (i in 1:length(files)) {
   print(paste(i,"/",length(files)))
   file = files[i]
+  date = file.info(file)$ctime
   base = tools::file_path_sans_ext(basename(file))
   #print(base)
   types=strsplit(base,"_")[[1]]
@@ -31,8 +34,8 @@ for (i in 1:length(files)) {
   dev= as.numeric(strsplit(dev, ":")[[1]][2])
   exp= as.numeric(strsplit(exp, ":")[[1]][2])
   
-  linetoadd = c(spp,dataset,variables,null,dev,exp)
-  names(linetoadd) = c("SPECIES","DATASET","MODEL","NULL","DEV","EXP")
+  linetoadd = c(spp,dataset,variables,null,dev,exp,date)
+  names(linetoadd) = c("SPECIES","DATASET","MODEL","NULL","DEV","EXP","DATE")
   
   if(is.null(newdf)){
     newdf = t(as.data.frame(linetoadd))
@@ -43,7 +46,7 @@ for (i in 1:length(files)) {
 
 newdf=unique(newdf)
 
-write.table(newdf,outfile,row.names = F)
+write.table(newdf,outfile,row.names = F,sep="\t")
 
 tab=table(newdf[,"SPECIES"],newdf[,"DATASET"])
 corrplot::corrplot(tab,is.corr=F,method="color")
