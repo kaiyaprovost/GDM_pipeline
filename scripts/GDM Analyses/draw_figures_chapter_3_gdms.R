@@ -3,11 +3,32 @@
 setwd("~")
 library(RColorBrewer)
 
-df = read.table("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/GDM_results/bivariate/bivariate_gdm_results.csv",
-                sep="\t",
+df = read.table("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/GDM_results/bivariate_gdm_results_useold.csv",
+                sep=",",
                 header=T,fill=T,
                 stringsAsFactors = F,
                 skip = 0)
+
+plot(log10(df$CHROM_LENGTH)[df$DATASET!="GENOME"],df$HZAR_width[df$DATASET!="GENOME"],
+     col=as.numeric(as.factor(df$SPECIES[df$DATASET!="GENOME"])))
+mod=lm(df$HZAR_width[df$DATASET!="GENOME"]~log10(df$CHROM_LENGTH[df$DATASET!="GENOME"]))
+mod=glm(df$HZAR_width[df$DATASET!="GENOME"]
+        ~log10(df$CHROM_LENGTH[df$DATASET!="GENOME"])+df$SPECIES[df$DATASET!="GENOME"])
+abline(mod,col="red")
+summary(mod)
+par(mfrow=c(2,5))
+for(spp in sort(unique(df$SPECIES))){
+  print(spp)
+  temp = df[df$SPECIES==spp,]
+  temp = temp[,c("CHROM_LENGTH","DATASET","HZAR_width")]
+  temp = temp[temp$DATASET!="GENOME",]
+  temp=temp[complete.cases(temp),]
+  plot(log10(temp$CHROM_LENGTH),temp$HZAR_width,main=spp)
+  mod=lm(temp$HZAR_width~log10(temp$CHROM_LENGTH))
+  abline(mod,col="red")
+  print(summary(mod))
+}
+
 
 lostruct = df[df$GDMSUBSET==1,]
 df = df[df$GDMSUBSET==0,]
@@ -879,6 +900,204 @@ TukeyHSD(model3) # ns
 TukeyHSD(model4) # ibh-iba, mix-iba, ibh-ibe, mix-ibe      before: ns
 TukeyHSD(model5) # ns
 
+
+###
+
+df2 = df[,c("DATASET","SPECIES","MEAN_DXY_50","MEAN_DXY_75","MEAN_DXY_100","MEAN_FST_50","MEAN_FST_75","MEAN_FST_100")]
+df2_g = df2[df2$DATASET=="GENOME",]
+df2_c = df2[grepl("CHR",df2$DATASET),]
+df2_l = df2[grepl("LS",df2$DATASET),]
+df2_h = df2[grepl("HIGH",df2$DATASET),]
+df2_o = df2[grepl("LOW",df2$DATASET),]
+
+
+agg_g_m = aggregate(cbind(df2_g$MEAN_DXY_50,df2_g$MEAN_DXY_75,df2_g$MEAN_DXY_100,
+                        #df2_g$MEAN_FST_50,df2_g$MEAN_FST_75,
+                        df2_g$MEAN_FST_100)~
+                    df2_g$SPECIES,data=df2_g,FUN=function(x){mean(x,na.rm=T)})
+agg_g_s = aggregate(cbind(df2_g$MEAN_DXY_50,df2_g$MEAN_DXY_75,df2_g$MEAN_DXY_100,
+                        #df2_g$MEAN_FST_50,df2_g$MEAN_FST_75,
+                        df2_g$MEAN_FST_100)~
+                    df2_g$SPECIES,data=df2_g,FUN=function(x){sd(x,na.rm=T)})
+
+barplot(t(as.matrix(agg_g_m[,2:4])),beside=T,col=c("black","darkgrey","lightgrey"),
+        names.arg=agg_g_m[,1],las=2,
+        main="DXY genome 50-75-100")
+
+barplot(t(as.matrix(agg_g_m[,5])),beside=T,col=c("black","darkgrey","lightgrey"),
+        names.arg=agg_g_m[,1],las=2,
+        main="fst genome 100")
+
+agg_c_m = aggregate(cbind(df2_c$MEAN_DXY_50,df2_c$MEAN_DXY_75,df2_c$MEAN_DXY_100,
+                          df2_c$MEAN_FST_50,df2_c$MEAN_FST_75,
+                          df2_c$MEAN_FST_100)~
+                      df2_c$SPECIES,data=df2_c,FUN=function(x){mean(x,na.rm=T)})
+agg_c_s = aggregate(cbind(df2_c$MEAN_DXY_50,df2_c$MEAN_DXY_75,df2_c$MEAN_DXY_100,
+                          df2_c$MEAN_FST_50,df2_c$MEAN_FST_75,
+                          df2_c$MEAN_FST_100)~
+                      df2_c$SPECIES,data=df2_c,FUN=function(x){sd(x,na.rm=T)})
+
+barplot(t(as.matrix(agg_c_m[,2:4])),beside=T,col=c("black","darkgrey","lightgrey"),
+        names.arg=agg_c_m[,1],las=2,
+        main="DXY chrom 50-75-100")
+barplot(t(as.matrix(agg_c_m[,5:7])),beside=T,col=c("black","darkgrey","lightgrey"),
+        names.arg=agg_c_m[,1],las=2,
+        main="fst chrom 50-75-100")
+
+agg_l_m = aggregate(cbind(#df2_l$MEAN_DXY_50,df2_l$MEAN_DXY_75,
+                          df2_l$MEAN_DXY_100,
+                          #df2_l$MEAN_FST_50,df2_l$MEAN_FST_75,
+                          df2_l$MEAN_FST_100)~
+                      df2_l$SPECIES,data=df2_l,FUN=function(x){mean(x,na.rm=T)})
+agg_l_s = aggregate(cbind(#df2_l$MEAN_DXY_50,df2_l$MEAN_DXY_75,
+                          df2_l$MEAN_DXY_100,
+                          #df2_l$MEAN_FST_50,df2_l$MEAN_FST_75,
+                          df2_l$MEAN_FST_100)~
+                      df2_l$SPECIES,data=df2_l,FUN=function(x){sd(x,na.rm=T)})
+
+barplot(t(as.matrix(agg_l_m[,2])),beside=T,col=c("black","darkgrey","lightgrey"),
+        names.arg=agg_l_m[,1],las=2,
+        main="DXY lostruct 100")
+barplot(t(as.matrix(agg_l_m[,3])),beside=T,col=c("black","darkgrey","lightgrey"),
+        names.arg=agg_l_m[,1],las=2,
+        main="fst lostruct 100")
+
+
+
+## correlation with chromosome size
+
+df_chr = df[!(is.na(df$CHROM_LENGTH)),]
+df_chr = df_chr[df_chr$FSTOUTLIER==0,]
+df_chr = df_chr[df_chr$LOSTRUCTOUTLIER==0,]
+df_chr = df_chr[df_chr$DATASET!="GENOME",]
+df_chr = df_chr[df_chr$MOSTA.1MODEL1!="",]
+
+lens = unique(df_chr[,c("DATASET","CHROM_LENGTH")])
+lens = lens[order(lens$DATASET),]
+
+tab=table(df_chr[,c("DATASET","MOSTA.1MODEL1")])
+plot(log10(lens$CHROM_LENGTH),tab[,1]/rowSums(tab),ylab="PROP IBA")
+mod=lm(tab[,1]/rowSums(tab)~log10(lens$CHROM_LENGTH))
+abline(mod,col="red"); summary(mod)
+plot(log10(lens$CHROM_LENGTH),tab[,2]/rowSums(tab),ylab="PROP IBB")
+mod=lm(tab[,2]/rowSums(tab)~log10(lens$CHROM_LENGTH))
+abline(mod,col="red"); summary(mod)
+plot(log10(lens$CHROM_LENGTH),tab[,3]/rowSums(tab),ylab="PROP IBD")
+mod=lm(tab[,3]/rowSums(tab)~log10(lens$CHROM_LENGTH))
+abline(mod,col="red"); summary(mod)
+plot(log10(lens$CHROM_LENGTH),tab[,4]/rowSums(tab),ylab="PROP IBE")
+mod=lm(tab[,4]/rowSums(tab)~log10(lens$CHROM_LENGTH))
+abline(mod,col="red"); summary(mod)
+plot(log10(lens$CHROM_LENGTH),tab[,5]/rowSums(tab),ylab="PROP IBH")
+mod=lm(tab[,5]/rowSums(tab)~log10(lens$CHROM_LENGTH))
+abline(mod,col="red"); summary(mod)
+plot(log10(lens$CHROM_LENGTH),tab[,6]/rowSums(tab),ylab="PROP MIXED")
+mod=lm(tab[,6]/rowSums(tab)~log10(lens$CHROM_LENGTH))
+abline(mod,col="red"); summary(mod)
+
+tab=table(df_chr[,c("DATASET","MOSTA.1MODEL2")])
+plot(log10(lens$CHROM_LENGTH),tab[,1]/rowSums(tab),ylab="PROP IBA")
+mod=lm(tab[,1]/rowSums(tab)~log10(lens$CHROM_LENGTH))
+abline(mod,col="red"); summary(mod)
+plot(log10(lens$CHROM_LENGTH),tab[,2]/rowSums(tab),ylab="PROP IBD")
+mod=lm(tab[,2]/rowSums(tab)~log10(lens$CHROM_LENGTH))
+abline(mod,col="red"); summary(mod)
+plot(log10(lens$CHROM_LENGTH),tab[,3]/rowSums(tab),ylab="PROP IBE")
+mod=lm(tab[,3]/rowSums(tab)~log10(lens$CHROM_LENGTH))
+abline(mod,col="red"); summary(mod)
+plot(log10(lens$CHROM_LENGTH),tab[,4]/rowSums(tab),ylab="PROP IBH")
+mod=lm(tab[,4]/rowSums(tab)~log10(lens$CHROM_LENGTH))
+abline(mod,col="red"); summary(mod)
+plot(log10(lens$CHROM_LENGTH),tab[,5]/rowSums(tab),ylab="PROP MIXED")
+mod=lm(tab[,5]/rowSums(tab)~log10(lens$CHROM_LENGTH))
+abline(mod,col="red"); summary(mod)
+
+tab=table(df_chr[,c("DATASET","MOSTA.1MODEL3")])
+plot(log10(lens$CHROM_LENGTH),tab[,1]/rowSums(tab),ylab="PROP IBA")
+mod=lm(tab[,1]/rowSums(tab)~log10(lens$CHROM_LENGTH))
+abline(mod,col="red"); summary(mod)
+plot(log10(lens$CHROM_LENGTH),tab[,2]/rowSums(tab),ylab="PROP IBE")
+mod=lm(tab[,2]/rowSums(tab)~log10(lens$CHROM_LENGTH))
+abline(mod,col="red"); summary(mod)
+plot(log10(lens$CHROM_LENGTH),tab[,3]/rowSums(tab),ylab="PROP IBH")
+mod=lm(tab[,3]/rowSums(tab)~log10(lens$CHROM_LENGTH))
+abline(mod,col="red"); summary(mod)
+plot(log10(lens$CHROM_LENGTH),tab[,4]/rowSums(tab),ylab="PROP MIXED")
+mod=lm(tab[,4]/rowSums(tab)~log10(lens$CHROM_LENGTH))
+abline(mod,col="red"); summary(mod)
+
+model1=aov(log(df_chr$CHROM_LENGTH[df_chr$MOSTA.1MODEL1!=""]) ~ df_chr$MOSTA.1MODEL1[df_chr$MOSTA.1MODEL1!=""])
+model2=aov(log(df_chr$CHROM_LENGTH[df_chr$MOSTA.1MODEL2!=""]) ~ df_chr$MOSTA.1MODEL2[df_chr$MOSTA.1MODEL2!=""])
+model3=aov(log(df_chr$CHROM_LENGTH[df_chr$MOSTA.1MODEL3!=""]) ~ df_chr$MOSTA.1MODEL3[df_chr$MOSTA.1MODEL3!=""])
+
+summary(model1)
+summary(model2)
+summary(model3)
+
+
+## test if % explained variance of IBD models is corr with recomb
+df_rec = df[!(is.na(df$MEAN_RECOMB_100)),]
+plot(df_rec$MEAN_RECOMB_100[df_rec$MOSTA.1MODEL1=="IBD"],df_rec$MAX1[df_rec$MOSTA.1MODEL1=="IBD"])
+mod=lm(df_rec$MAX1[df_rec$MOSTA.1MODEL1=="IBD"]~df_rec$MEAN_RECOMB_100[df_rec$MOSTA.1MODEL1=="IBD"])
+abline(mod,col="red")
+summary(mod)
+plot(df_rec$MEAN_RECOMB_100[df_rec$MOSTA.1MODEL1=="IBA"],df_rec$MAX1[df_rec$MOSTA.1MODEL1=="IBA"])
+mod=lm(df_rec$MAX1[df_rec$MOSTA.1MODEL1=="IBA"]~df_rec$MEAN_RECOMB_100[df_rec$MOSTA.1MODEL1=="IBA"])
+abline(mod,col="red")
+summary(mod)
+
+plot(df_rec$MEAN_RECOMB_100[df_rec$MOSTA.1MODEL2=="IBD"],df_rec$MAX1[df_rec$MOSTA.1MODEL2=="IBD"])
+mod=lm(df_rec$MAX1[df_rec$MOSTA.1MODEL2=="IBD"]~df_rec$MEAN_RECOMB_100[df_rec$MOSTA.1MODEL2=="IBD"])
+abline(mod,col="red")
+summary(mod)
+
+
+plot(df$MEAN_RECOMB_100,df$MAX1)
+plot(df$MEAN_DXY_100,df$MAX1)
+plot(df$MEAN_FST_100,df$MAX1)
+plot(df$MEAN_FST_100[df$MEAN_FST_100<0.5],df$MAX1[df$MEAN_FST_100<0.5])
+plot(df$MEAN_DXY_75,df$MAX1)
+plot(df$MEAN_FST_75,df$MAX1)
+plot(df$MEAN_DXY_50,df$MAX1)
+plot(df$MEAN_FST_50,df$MAX1)
+plot(log10(df$CHROM_LENGTH),df$MAX1)
+plot(df$PERCENT_MISSING,df$MAX1)
+
+summary(lm(df$MEAN_RECOMB_100~df$MAX1)) ## sig
+summary(lm(df$MEAN_DXY_100~df$MAX1))
+summary(lm(df$MEAN_FST_100~df$MAX1)) ## sig
+summary(lm(df$MEAN_FST_100[df$MEAN_FST_100<0.5]~df$MAX1[df$MEAN_FST_100<0.5])) ## sig
+summary(lm(df$MEAN_DXY_75~df$MAX1))
+summary(lm(df$MEAN_FST_75~df$MAX1)) ## sig
+summary(lm(df$MEAN_DXY_50~df$MAX1))
+summary(lm(df$MEAN_FST_50~df$MAX1)) ## sig
+summary(lm(log10(df$CHROM_LENGTH)~df$MAX1))
+summary(lm(df$PERCENT_MISSING~df$MAX1)) ## sig
+
+
+cor(df[,c("MAX1","MEAN_RECOMB_100","MEAN_DXY_100","MEAN_FST_100",
+          "MEAN_DXY_75","MEAN_FST_75","MEAN_DXY_50","MEAN_FST_50",
+          "CHROM_LENGTH","PERCENT_MISSING")],use="pairwise.complete.obs")[1,]
+
+
+
+
+
+
+head(df)
+
+
+
+mod1=aov(df$HZAR_width[df$MOSTA.1MODEL1!=""]~
+           df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""]#+df$SPECIES[df$MOSTA.1MODEL1!=""]
+         )
+summary(mod1)
+
+mod1=glm(df$HZAR_width[df$MOSTA.1MODEL1!=""]~
+           df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""]+df$SPECIES[df$MOSTA.1MODEL1!=""]
+)
+summary(mod1)
+car::Anova(mod1)
 
 
 

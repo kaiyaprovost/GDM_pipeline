@@ -200,6 +200,9 @@ palette(c("black","green","goldenrod","magenta","darkred","cyan","grey","orange"
 #plot(0,ylim=c(0,1),xlim=c(-120,-97),type="n",ylab="Scaled Relative Suitability",xlab="Longitude")
 plot(0,ylim=c(0,1),xlim=c(-114,-100),type="n",ylab="Scaled Relative Suitability",xlab="Longitude")
 
+enm_means_sds = NULL
+
+library(raster)
 for (i in 1:10) {
   print(i)
   enm2 = raster(paste(enm_path2,enm_list2[i],sep=""))
@@ -244,12 +247,24 @@ for (i in 1:10) {
   latmeans=colMeans(df,na.rm=T)
   latsds = matrixStats::colSds(df,na.rm=T)
 
+  allmean = mean(df,na.rm=T)
+  allsd = sd(df,na.rm=T)
+  if(is.null(enm_means_sds)){
+    enm_means_sds = cbind(name=enm_list2[i],allmean,allsd)
+  } else {
+    enm_means_sds = rbind(enm_means_sds,cbind(name=enm_list2[i],allmean,allsd))
+  }
+  
   spts <- as.data.frame(rasterToPoints(enm_c3s, spatial = TRUE))
   spts = spts[,c("x","y")]
   spts = unique(spts)
   lats = unique(spts[,"x"])
   longs = unique(spts[,"y"])
-  lines(lats,latmeans,type="l",col=i)
+  
+  df2 = cbind(lats,latmeans,latsds)
+  write.table(df2,paste(enm_path2,enm_list2[i],"_SUITABILITY_CONTACT_TABLE.txt",sep=""),
+              sep="\t",row.names = F,quote = F)
+  #lines(lats,latmeans,type="l",col=i)
  #  
  #  min1=min((latmeans-latsds),na.rm=T)
  #  max1=max((latmeans+latsds),na.rm=T)
@@ -263,7 +278,8 @@ for (i in 1:10) {
   
 } 
 dev.off()
-
+write.table(enm_means_sds,file=paste(enm_path2,"species_contact_zone_suitability_mean_sd.txt"),sep="\t",
+            quote = F,row.names = F)
 
 
 
