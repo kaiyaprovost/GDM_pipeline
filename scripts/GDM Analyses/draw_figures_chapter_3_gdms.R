@@ -1,97 +1,104 @@
- rm(list=ls())
+rm(list=ls())
+dev.off()
 
 setwd("~")
 library(RColorBrewer)
+date=format(Sys.time(), "%d%b%Y")
 
-df = read.table("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/GDM_results/bivariate_gdm_results_useold.csv",
+df = read.table("/Users/kprovost/Dropbox (AMNH)/bivariate_gdm_results_NGSDIST_20July2022.csv",
                 sep=",",
                 header=T,fill=T,
                 stringsAsFactors = F,
                 skip = 0)
+colnames(df) = toupper(colnames(df))
 
-plot(log10(df$CHROM_LENGTH)[df$DATASET!="GENOME"],df$HZAR_width[df$DATASET!="GENOME"],
+plot(log10(df$CHROM_LENGTH)[df$DATASET!="GENOME"],df$HZAR_WIDTH[df$DATASET!="GENOME"],
      col=as.numeric(as.factor(df$SPECIES[df$DATASET!="GENOME"])))
-mod=lm(df$HZAR_width[df$DATASET!="GENOME"]~log10(df$CHROM_LENGTH[df$DATASET!="GENOME"]))
-mod=glm(df$HZAR_width[df$DATASET!="GENOME"]
+mod=lm(df$HZAR_WIDTH[df$DATASET!="GENOME"]~log10(df$CHROM_LENGTH[df$DATASET!="GENOME"]))
+mod=glm(df$HZAR_WIDTH[df$DATASET!="GENOME"]
         ~log10(df$CHROM_LENGTH[df$DATASET!="GENOME"])+df$SPECIES[df$DATASET!="GENOME"])
 abline(mod,col="red")
-summary(mod)
+summary(mod) ## 21 July 2022: these are significant 
 par(mfrow=c(2,5))
 for(spp in sort(unique(df$SPECIES))){
   print(spp)
   temp = df[df$SPECIES==spp,]
-  temp = temp[,c("CHROM_LENGTH","DATASET","HZAR_width")]
+  temp = temp[,c("CHROM_LENGTH","DATASET","HZAR_WIDTH")]
   temp = temp[temp$DATASET!="GENOME",]
   temp=temp[complete.cases(temp),]
-  plot(log10(temp$CHROM_LENGTH),temp$HZAR_width,main=spp)
-  mod=lm(temp$HZAR_width~log10(temp$CHROM_LENGTH))
+  plot(log10(temp$CHROM_LENGTH),temp$HZAR_WIDTH,main=spp)
+  mod=lm(temp$HZAR_WIDTH~log10(temp$CHROM_LENGTH))
   abline(mod,col="red")
   print(summary(mod))
 }
 
 
-lostruct = df[df$GDMSUBSET==1,]
-df = df[df$GDMSUBSET==0,]
+lostruct = df[df$LOSTRUCTOUTLIER==1,]
+df = df[df$LOSTRUCTOUTLIER==0,]
+#df = df[df$GDMSUBSET==0,]
 
 sumstats=c("CHROM_LENGTH","GDMCOLOR","HZAR_CENTER","HZAR_WIDTH","MEAN_DXY","MEAN_FST","MEAN_RECOMB","NUMBER.DXY.LOWS",
            "NUMBER.DXY.PEAKS","NUMBER.FST.PEAKS","NUMBER.ISLANDS","NUMBER.SWEEPS",
-           "PERCENT_MISSING","PROP.DXY.LOW","PROP.DXY.PEAK","PROP.FST.PEAK","PROP.ISL","PROP.SWP","TAJIMAS")
+           "PERCENT_MISSING","PROP.DXY.LOW","PROP.DXY.PEAK","PROP.FST.PEAK","PROP.ISL","PROP.SWP","TAJIMAS",
+           "CONTACT_SUITABILITY_MEAN","CONTACT_SUITABILITY_SD","MEAN_DXY_100","MEAN_DXY_75","MEAN_DXY_50",
+           "MEAN_FST_100","MEAN_FST_75","MEAN_FST_50","MEAN_RECOMB_100")
+sumstats = intersect(sumstats,colnames(df))
 
-pdf("summary_stats_by_species_gdm_10mar2021.pdf"); {
+pdf(paste("summary_stats_by_species_gdm_",date,".pdf",sep="")); {
 cols=rainbow(10)
 for (stat in sumstats){
   print(stat)
   boxplot(df[,stat] ~ substr(df$SPECIES,1,3),col=cols,las=2,ylab=stat,xlab="Species",main="normal")
-  if(sum(!(is.na(unique(lostruct[,stat]))))>1) {
-    boxplot(lostruct[,stat] ~ substr(lostruct$SPECIES,1,3),col=cols,las=2,ylab=stat,xlab="Species",main="LOSTRUCT")
-  }
+  #if(sum(!(is.na(unique(lostruct[,stat]))))>1) {
+  #  boxplot(lostruct[,stat] ~ substr(lostruct$SPECIES,1,3),col=cols,las=2,ylab=stat,xlab="Species",main="LOSTRUCT")
+  #}
 }
 }
 dev.off()
 
-pdf("summary_stats_by_mostamodel2_gdm_10mar2021.pdf"); {
+pdf(paste("summary_stats_by_mostamodel2_gdm_",date,".pdf",sep="")); {
   cols=c(brewer.pal(8,"Dark2")[c(1,3,7,4)],"grey")
   for (stat in sumstats){
     print(stat)
     data_to_plot = df[,stat]
     boxplot(data_to_plot[df$MOSTA.1MODEL2!=""] ~ df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],col=cols,las=2,ylab=stat,xlab="Species",main="normal")
     
-    if(sum(!(is.na(unique(lostruct[,stat]))))>1) {
-      data_to_plot = lostruct[,stat]
-      boxplot(data_to_plot[lostruct$MOSTA.1MODEL2!=""] ~ lostruct$MOSTA.1MODEL2[lostruct$MOSTA.1MODEL2!=""],col=cols,las=2,ylab=stat,xlab="Species",main="LOSTRUCT")
-      }
+    #if(sum(!(is.na(unique(lostruct[,stat]))))>1) {
+    #  data_to_plot = lostruct[,stat]
+    #  boxplot(data_to_plot[lostruct$MOSTA.1MODEL2!=""] ~ lostruct$MOSTA.1MODEL2[lostruct$MOSTA.1MODEL2!=""],col=cols,las=2,ylab=stat,xlab="Species",main="LOSTRUCT")
+    #  }
     
   }
 }
 dev.off()
 
-pdf("summary_stats_by_mostamodel1_gdm_10mar2021.pdf"); {
+pdf(paste("summary_stats_by_mostamodel1_gdm_",date,".pdf",sep="")); {
   cols=c(brewer.pal(8,"Dark2")[c(1,2,3,7,4)],"grey")
   for (stat in sumstats){
     data_to_plot = df[,stat]
     boxplot(data_to_plot[df$MOSTA.1MODEL1!=""] ~ df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""],col=cols,las=2,ylab=stat,xlab="Species",main="normal")
     
-    if(sum(!(is.na(unique(lostruct[,stat]))))>1) {
-      data_to_plot = lostruct[,stat]
-      boxplot(data_to_plot[lostruct$MOSTA.1MODEL1!=""] ~ lostruct$MOSTA.1MODEL1[lostruct$MOSTA.1MODEL1!=""],col=cols,las=2,ylab=stat,xlab="Species",main="LOSTRUCT")
-      
-    }
+    #if(sum(!(is.na(unique(lostruct[,stat]))))>1) {
+    #  data_to_plot = lostruct[,stat]
+    #  boxplot(data_to_plot[lostruct$MOSTA.1MODEL1!=""] ~ lostruct$MOSTA.1MODEL1[lostruct$MOSTA.1MODEL1!=""],col=cols,las=2,ylab=stat,xlab="Species",main="LOSTRUCT")
+    #  
+    #}
     
   }
 }
 dev.off()
 
-pdf("summary_stats_by_mostamodel3_gdm_10mar2021.pdf"); {
+pdf(paste("summary_stats_by_mostamodel3_gdm_",date,".pdf")); {
   cols=c(brewer.pal(8,"Dark2")[c(1,7,4)],"grey")
   for (stat in sumstats){
     data_to_plot = df[,stat]
     boxplot(data_to_plot[df$MOSTA.1MODEL3!=""] ~ df$MOSTA.1MODEL3[df$MOSTA.1MODEL3!=""],col=cols,las=2,ylab=stat,xlab="Species",main="normal")
     
-    if(sum(!(is.na(unique(lostruct[,stat]))))>1) {
-      data_to_plot = lostruct[,stat]
-      boxplot(data_to_plot[lostruct$MOSTA.1MODEL3!=""] ~ lostruct$MOSTA.1MODEL3[lostruct$MOSTA.1MODEL3!=""],col=cols,las=2,ylab=stat,xlab="Species",main="LOSTRUCT")
-      
-    }
+    #if(sum(!(is.na(unique(lostruct[,stat]))))>1) {
+    #  data_to_plot = lostruct[,stat]
+    #  boxplot(data_to_plot[lostruct$MOSTA.1MODEL3!=""] ~ lostruct$MOSTA.1MODEL3[lostruct$MOSTA.1MODEL3!=""],col=cols,las=2,ylab=stat,xlab="Species",main="LOSTRUCT")
+    #  
+    #}
     
   }
 }
@@ -99,53 +106,53 @@ dev.off()
 
 
 ## check hzar real quick
-boxplot(df$HZAR_CENTER~df$MOSTA.1MODEL2)
-boxplot(df$HZAR_WIDTH~df$MOSTA.1MODEL2)
+boxplot(df$HZAR_CENTER[df$MOSTA.1MODEL1!=""]~df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""])
+boxplot(df$HZAR_WIDTH[df$MOSTA.1MODEL1!=""]~df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""])
 
-model1=aov(df$HZAR_WIDTH[df$MOSTA.1MODEL2!=""] ~ df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""])
-summary(model1) # not sig 0.258
+model1=aov(df$HZAR_WIDTH[df$MOSTA.1MODEL1!=""] ~ df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""])
+summary(model1) # 21 July 2022: sig
+TukeyHSD(model1) # 21 July 2022: sig
+
+model1=aov(df$HZAR_CENTER[df$MOSTA.1MODEL1!=""] ~ df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""])
+summary(model1) # 21 July 2022: sig 
 TukeyHSD(model1) # n.s.
 
-model1=aov(df$HZAR_CENTER[df$MOSTA.1MODEL2!=""] ~ df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""])
-summary(model1) # not sig 0.413
-TukeyHSD(model1) # n.s.
 
 
-
-png("summary_stats_by_species_gdm_10mar2021.png",height=4.5,width=6,units = "in",
+png(paste("summary_stats_by_species_gdm_",date,".png",sep=""),height=4.5,width=6,units = "in",
     res=300); {
 par(mfrow=c(2,2),
     cex.axis=0.75,cex.lab=0.75,
     mar=c(0.5,4,0.5,0))
 cols=rainbow(10)
-plotrix::gap.boxplot(df$MEAN_FST~substr(df$SPECIES,1,3),
+plotrix::gap.boxplot(df$MEAN_FST_100~substr(df$SPECIES,1,3),
                      gap=list(top=c(0.22,0.56),bottom=c(NA,NA)),
                      axes=F,ylim=c(0.01,0.58),ylab="Mean Fst",
                      xaxt="n",col=cols)
 title(ylab="Mean Fst")
 axis(2,labels=c(seq(0,0.2,0.05),0.57),
      at=c(seq(0,0.2,0.05),0.235),tick=T)
-boxplot(df$MEAN_DXY~substr(df$SPECIES,1,3),ylab="Mean Dxy",
+boxplot(df$MEAN_DXY_100~substr(df$SPECIES,1,3),ylab="Mean Dxy",
         xaxt="n",col=cols)
 boxplot(df$PERCENT_MISSING~substr(df$SPECIES,1,3),
         ylab="Percent Missing",xaxt="n",col=cols)
-boxplot((df$MEAN_RECOMB/(1e-9))~substr(df$SPECIES,1,3),
+boxplot((df$MEAN_RECOMB_100/(1e-9))~substr(df$SPECIES,1,3),
         ylab="Mean Recombination Rate (x 1^-9)",
         xaxt="n",col=cols)
 }
 dev.off()
 
-png("summary_stats_by_species_gdmlostruct_10mar2021.png",height=4.5,width=6,units = "in",
+png(paste("summary_stats_by_species_gdmlostruct_",date,".png"),height=4.5,width=6,units = "in",
     res=300); {
       par(mfrow=c(2,2),
           cex.axis=0.75,cex.lab=0.75,
           mar=c(0.5,4,0.5,0))
       cols=rainbow(10)
-      boxplot(lostruct$MEAN_FST~substr(lostruct$SPECIES,1,3),
+      boxplot(lostruct$MEAN_FST_100~substr(lostruct$SPECIES,1,3),
                            ylab="Mean Fst",
                            xaxt="n",col=cols)
       title(ylab="Mean Fst")
-      boxplot(lostruct$MEAN_DXY~substr(lostruct$SPECIES,1,3),ylab="Mean Dxy",
+      boxplot(lostruct$MEAN_DXY_100~substr(lostruct$SPECIES,1,3),ylab="Mean Dxy",
               xaxt="n",col=cols)
       boxplot(lostruct$PERCENT_MISSING~substr(lostruct$SPECIES,1,3),
               ylab="Percent Missing",xaxt="n",col=cols)
@@ -155,8 +162,8 @@ png("summary_stats_by_species_gdmlostruct_10mar2021.png",height=4.5,width=6,unit
     }
 dev.off()
 
-numonly = df[,c("MEAN_FST","MEAN_DXY","MEAN_RECOMB","PERCENT_MISSING")]
-numonly_nofstout = numonly[numonly$MEAN_FST<=0.5,]
+numonly = df[,c("MEAN_FST_100","MEAN_DXY_100","MEAN_RECOMB_100","PERCENT_MISSING")]
+numonly_nofstout = numonly[numonly$MEAN_FST_100<=0.5,]
 plot(numonly_nofstout)
 
 cor(numonly,use="pairwise.complete.obs")
@@ -169,90 +176,90 @@ corrplot::corrplot(cor(numonly_nofstout,use="pairwise.complete.obs"),
                    method="number",diag=T,type="upper")
 
 par(mfrow=c(2,3),mar=c(4,4,0,0))
-plot(numonly$PERCENT_MISSING,numonly$MEAN_FST)
-abline(lm(numonly$MEAN_FST~numonly$PERCENT_MISSING),col="red")
-summary(lm(numonly$MEAN_FST~numonly$PERCENT_MISSING))$adj.r.squared
+plot(numonly$PERCENT_MISSING,numonly$MEAN_FST_100)
+abline(lm(numonly$MEAN_FST_100~numonly$PERCENT_MISSING),col="red")
+summary(lm(numonly$MEAN_FST_100~numonly$PERCENT_MISSING))$adj.r.squared
 
-plot(numonly$PERCENT_MISSING,numonly$MEAN_DXY)
-abline(lm(numonly$MEAN_DXY~numonly$PERCENT_MISSING),col="red")
-summary(lm(numonly$MEAN_DXY~numonly$PERCENT_MISSING))$adj.r.squared
+plot(numonly$PERCENT_MISSING,numonly$MEAN_DXY_100)
+abline(lm(numonly$MEAN_DXY_100~numonly$PERCENT_MISSING),col="red")
+summary(lm(numonly$MEAN_DXY_100~numonly$PERCENT_MISSING))$adj.r.squared
 
-plot(numonly$PERCENT_MISSING,numonly$MEAN_RECOMB)
-abline(lm(numonly$MEAN_RECOMB~numonly$PERCENT_MISSING),col="red")
-summary(lm(numonly$MEAN_RECOMB~numonly$PERCENT_MISSING))$adj.r.squared
+plot(numonly$PERCENT_MISSING,numonly$MEAN_RECOMB_100)
+abline(lm(numonly$MEAN_RECOMB_100~numonly$PERCENT_MISSING),col="red")
+summary(lm(numonly$MEAN_RECOMB_100~numonly$PERCENT_MISSING))$adj.r.squared
 
-plot(numonly$MEAN_DXY,numonly$MEAN_FST)
-abline(lm(numonly$MEAN_FST~numonly$MEAN_DXY),col="red")
-summary(lm(numonly$MEAN_FST~numonly$MEAN_DXY))$adj.r.squared
+plot(numonly$MEAN_DXY_100,numonly$MEAN_FST_100T)
+abline(lm(numonly$MEAN_FST_100~numonly$MEAN_DXY_100),col="red")
+summary(lm(numonly$MEAN_FST_100~numonly$MEAN_DXY_100))$adj.r.squared
 
-plot(numonly$MEAN_RECOMB,numonly$MEAN_FST)
-abline(lm(numonly$MEAN_FST~numonly$MEAN_RECOMB),col="red")
-summary(lm(numonly$MEAN_FST~numonly$MEAN_RECOMB))$adj.r.squared
+plot(numonly$MEAN_RECOMB_100,numonly$MEAN_FST_100)
+abline(lm(numonly$MEAN_FST_100~numonly$MEAN_RECOMB_100),col="red")
+summary(lm(numonly$MEAN_FST_100~numonly$MEAN_RECOMB_100))$adj.r.squared
 
-plot(numonly$MEAN_RECOMB,numonly$MEAN_DXY)
-abline(lm(numonly$MEAN_DXY~numonly$MEAN_RECOMB),col="red")
-summary(lm(numonly$MEAN_DXY~numonly$MEAN_RECOMB))$adj.r.squared
+plot(numonly$MEAN_RECOMB_100,numonly$MEAN_DXY_100)
+abline(lm(numonly$MEAN_DXY_100~numonly$MEAN_RECOMB_100),col="red")
+summary(lm(numonly$MEAN_DXY_100~numonly$MEAN_RECOMB_100))$adj.r.squared
 
 
 
 
 par(mfrow=c(2,3),mar=c(4,4,0,0))
-plot(numonly_nofstout$PERCENT_MISSING,numonly_nofstout$MEAN_FST)
-abline(lm(numonly_nofstout$MEAN_FST~numonly_nofstout$PERCENT_MISSING),col="red")
-summary(lm(numonly_nofstout$MEAN_FST~numonly_nofstout$PERCENT_MISSING))$adj.r.squared
+plot(numonly_nofstout$PERCENT_MISSING,numonly_nofstout$MEAN_FST_100)
+abline(lm(numonly_nofstout$MEAN_FST_100~numonly_nofstout$PERCENT_MISSING),col="red")
+summary(lm(numonly_nofstout$MEAN_FST_100~numonly_nofstout$PERCENT_MISSING))$adj.r.squared
 
-plot(numonly_nofstout$PERCENT_MISSING,numonly_nofstout$MEAN_DXY)
-abline(lm(numonly_nofstout$MEAN_DXY~numonly_nofstout$PERCENT_MISSING),col="red")
-summary(lm(numonly_nofstout$MEAN_DXY~numonly_nofstout$PERCENT_MISSING))$adj.r.squared
+plot(numonly_nofstout$PERCENT_MISSING,numonly_nofstout$MEAN_DXY_100)
+abline(lm(numonly_nofstout$MEAN_DXY_100~numonly_nofstout$PERCENT_MISSING),col="red")
+summary(lm(numonly_nofstout$MEAN_DXY_100~numonly_nofstout$PERCENT_MISSING))$adj.r.squared
 
-plot(numonly_nofstout$PERCENT_MISSING,numonly_nofstout$MEAN_RECOMB)
-abline(lm(numonly_nofstout$MEAN_RECOMB~numonly_nofstout$PERCENT_MISSING),col="red")
-summary(lm(numonly_nofstout$MEAN_RECOMB~numonly_nofstout$PERCENT_MISSING))$adj.r.squared
+plot(numonly_nofstout$PERCENT_MISSING,numonly_nofstout$MEAN_RECOMB_100)
+abline(lm(numonly_nofstout$MEAN_RECOMB_100~numonly_nofstout$PERCENT_MISSING),col="red")
+summary(lm(numonly_nofstout$MEAN_RECOMB_100~numonly_nofstout$PERCENT_MISSING))$adj.r.squared
 
-plot(numonly_nofstout$MEAN_DXY,numonly_nofstout$MEAN_FST)
-abline(lm(numonly_nofstout$MEAN_FST~numonly_nofstout$MEAN_DXY),col="red")
-summary(lm(numonly_nofstout$MEAN_FST~numonly_nofstout$MEAN_DXY))$adj.r.squared
+plot(numonly_nofstout$MEAN_DXY_100,numonly_nofstout$MEAN_FST_100)
+abline(lm(numonly_nofstout$MEAN_FST_100~numonly_nofstout$MEAN_DXY_100),col="red")
+summary(lm(numonly_nofstout$MEAN_FST_100~numonly_nofstout$MEAN_DXY_100))$adj.r.squared
 
-plot(numonly_nofstout$MEAN_RECOMB,numonly_nofstout$MEAN_FST)
-abline(lm(numonly_nofstout$MEAN_FST~numonly_nofstout$MEAN_RECOMB),col="red")
-summary(lm(numonly_nofstout$MEAN_FST~numonly_nofstout$MEAN_RECOMB))$adj.r.squared
+plot(numonly_nofstout$MEAN_RECOMB_100,numonly_nofstout$MEAN_FST_100T)
+abline(lm(numonly_nofstout$MEAN_FST_100~numonly_nofstout$MEAN_RECOMB_100),col="red")
+summary(lm(numonly_nofstout$MEAN_FST_100~numonly_nofstout$MEAN_RECOMB_100))$adj.r.squared
 
-plot(numonly_nofstout$MEAN_RECOMB,numonly_nofstout$MEAN_DXY)
-abline(lm(numonly_nofstout$MEAN_DXY~numonly_nofstout$MEAN_RECOMB),col="red")
-summary(lm(numonly_nofstout$MEAN_DXY~numonly_nofstout$MEAN_RECOMB))$adj.r.squared
-
-
+plot(numonly_nofstout$MEAN_RECOMB_100,numonly_nofstout$MEAN_DXY_100)
+abline(lm(numonly_nofstout$MEAN_DXY_100~numonly_nofstout$MEAN_RECOMB_100),col="red")
+summary(lm(numonly_nofstout$MEAN_DXY_100~numonly_nofstout$MEAN_RECOMB_100))$adj.r.squared
 
 
 
 
-plot(df$MEAN_FST,df$PERCENT_MISSING)
-plot(df$MEAN_DXY,df$PERCENT_MISSING)
-plot(df$MEAN_RECOMB,df$PERCENT_MISSING)
 
-cor(df$MEAN_FST,df$PERCENT_MISSING,use="pairwise.complete.obs") # -0.337
-cor(df$MEAN_DXY,df$PERCENT_MISSING,use="pairwise.complete.obs") # 0.267
-cor(df$MEAN_RECOMB,df$PERCENT_MISSING,use="pairwise.complete.obs") # 0.08
+
+plot(df$MEAN_FST_100,df$PERCENT_MISSING)
+plot(df$MEAN_DXY_100,df$PERCENT_MISSING)
+plot(df$MEAN_RECOMB_100,df$PERCENT_MISSING)
+
+cor(df$MEAN_FST_100,df$PERCENT_MISSING,use="pairwise.complete.obs") # -0.337
+cor(df$MEAN_DXY_100,df$PERCENT_MISSING,use="pairwise.complete.obs") # 0.267
+cor(df$MEAN_RECOMB_100,df$PERCENT_MISSING,use="pairwise.complete.obs") # 0.08
 
 library(RColorBrewer)
 cols=c(brewer.pal(8,"Dark2")[c(1,3,7,4)],"grey")
 par(mar=c(4,4,0.1,0.1),
     mfrow=c(1,3))
-boxplot(df$MEAN_RECOMB[df$MOSTA.1MODEL2!=""]/(1e-9)~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+boxplot(df$MEAN_RECOMB_100[df$MOSTA.1MODEL2!=""]/(1e-9)~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
         col=cols,
         ylab="Mean Recombination Rate (x 1^-9)",
         xlab="Best Model",las=2)
 
-boxplot(df$MEAN_RECOMB[df$MOSTA.1MODEL1!=""]/(1e-9)~df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""],
+boxplot(df$MEAN_RECOMB_100[df$MOSTA.1MODEL1!=""]/(1e-9)~df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""],
         col=cols,
         ylab="Mean Recombination Rate (x 1^-9)",
         xlab="Best Model",las=2)
-boxplot(df$MEAN_RECOMB[df$MOSTA.1MODEL3!=""]/(1e-9)~df$MOSTA.1MODEL3[df$MOSTA.1MODEL3!=""],
+boxplot(df$MEAN_RECOMB_100[df$MOSTA.1MODEL3!=""]/(1e-9)~df$MOSTA.1MODEL3[df$MOSTA.1MODEL3!=""],
         col=cols,
         ylab="Mean Recombination Rate (x 1^-9)",
         xlab="Best Model",las=2)
 
-model=aov(df$MEAN_RECOMB[df$MOSTA.1MODEL3!=""] ~ df$MOSTA.1MODEL3[df$MOSTA.1MODEL3!=""])
+model=aov(df$MEAN_RECOMB_100[df$MOSTA.1MODEL1!=""] ~ df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""])
 summary(model) 
 ## sig uni, mixed different
 ## not significant biv
@@ -262,18 +269,18 @@ TukeyHSD(model)
 agg=aggregate(df$PERCENT_MISSING~df$SPECIES,FUN=function(x){sd(x,na.rm=T)})
 
 
-png("four_panel_figure_chapter_3_ibd2mix_10mar2021.png",height=4,width=6,units = "in",
+png(paste("four_panel_figure_chapter_3_ibd2mix_",date,".png"),height=4,width=6,units = "in",
     res=300); {
 library(RColorBrewer)
 cols=c(brewer.pal(8,"Dark2")[c(1,3,7,4)],"grey")
 ## four panels to see if same
 par(mfrow=c(2,2),cex.axis=1)
 par(mar=c(0.1,4,0.3,0.1))
-#boxplot(df$MEAN_FST[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+#boxplot(df$MEAN_FST_100[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
 #        col=cols,xaxt="n",
 #        ylab="Mean Fst",
 #        xlab="Best Model",las=2)
-plotrix::gap.boxplot(df$MEAN_FST[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+plotrix::gap.boxplot(df$MEAN_FST_100[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
                      gap=list(top=c(0.22,0.56),bottom=c(NA,NA)),
                      axes=F,ylim=c(0.01,0.58),ylab="Mean Fst",xlab="Best Model",
                      xaxt="n",col=cols)
@@ -282,7 +289,7 @@ legend("topright",legend=c("IBA","IBD","IBE","IBH","MIX"),
 title(ylab="Mean Fst")
 axis(2,labels=c(seq(0,0.2,0.05),0.57),
      at=c(seq(0,0.2,0.05),0.235),tick=T,las=1)
-boxplot(df$MEAN_DXY[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+boxplot(df$MEAN_DXY_100[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
         col=cols,xaxt="n",
         ylab="Mean Dxy",
         xlab="Best Model",las=1)
@@ -290,7 +297,7 @@ boxplot(df$PERCENT_MISSING[df$MOSTA.1MODEL2!=""]*100~df$MOSTA.1MODEL2[df$MOSTA.1
         col=cols,xaxt="n",
         ylab="Percent Missing",
         xlab="Best Model",las=1)
-boxplot(df$MEAN_RECOMB[df$MOSTA.1MODEL2!=""]/(1e-9)~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+boxplot(df$MEAN_RECOMB_100[df$MOSTA.1MODEL2!=""]/(1e-9)~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
         col=cols,xaxt="n",
         ylab="Mean Recombination Rate",
         xlab="Best Model",las=2)
@@ -300,19 +307,19 @@ dev.off()
 ## not significant biv
 ## almost sig multim mixed-inh almost sig
 
-png("four_panel_figure_chapter_3_ibd2mix_lostruct_10mar2021.png",height=4,width=6,units = "in",
+png(paste("four_panel_figure_chapter_3_ibd2mix_lostruct_",date,".png"),height=4,width=6,units = "in",
     res=300); {
       library(RColorBrewer)
       cols=c(brewer.pal(8,"Dark2")[c(1,3,7,4)],"grey")
       ## four panels to see if same
       par(mfrow=c(2,2),cex.axis=1)
       par(mar=c(0.1,4,0.3,0.1))
-      boxplot(lostruct$MEAN_FST[lostruct$MOSTA.1MODEL2!=""]~lostruct$MOSTA.1MODEL2[lostruct$MOSTA.1MODEL2!=""],
+      boxplot(lostruct$MEAN_FST_100[lostruct$MOSTA.1MODEL2!=""]~lostruct$MOSTA.1MODEL2[lostruct$MOSTA.1MODEL2!=""],
                            ylab="Mean Fst",xlab="Best Model",
                            xaxt="n",col=cols,border=c(rep("black",4),cols[5]))
       legend("topright",legend=c("IBA","IBD","IBE","IBH","MIX"),
              col=cols,fill=cols,cex=0.8,ncol=1)
-      b=boxplot(lostruct$MEAN_DXY[lostruct$MOSTA.1MODEL2!=""]~lostruct$MOSTA.1MODEL2[lostruct$MOSTA.1MODEL2!=""],
+      b=boxplot(lostruct$MEAN_DXY_100[lostruct$MOSTA.1MODEL2!=""]~lostruct$MOSTA.1MODEL2[lostruct$MOSTA.1MODEL2!=""],
                 col=cols,border=c(rep("black",4),cols[5]),xaxt="n",
               ylab="Mean Dxy",
               xlab="Best Model",las=1)
@@ -321,26 +328,26 @@ png("four_panel_figure_chapter_3_ibd2mix_lostruct_10mar2021.png",height=4,width=
               na.action="na.pass",
               ylab="Percent Missing",xaxt="n",
               xlab="Best Model",las=1)
-      boxplot(lostruct$MEAN_RECOMB[lostruct$MOSTA.1MODEL2!=""]/(1e-9)~lostruct$MOSTA.1MODEL2[lostruct$MOSTA.1MODEL2!=""],
+      boxplot(lostruct$MEAN_RECOMB_100[lostruct$MOSTA.1MODEL2!=""]/(1e-9)~lostruct$MOSTA.1MODEL2[lostruct$MOSTA.1MODEL2!=""],
               col=cols,border=c(rep("black",4),cols[5]),xaxt="n",
               ylab="Mean Recombination Rate",
               xlab="Best Model",las=2)
     }
 dev.off()
 
-png("four_panel_figure_chapter_3_univariate_ibd2mix_lostruct_10mar2021.png",height=4,width=6,units = "in",
+png(paste("four_panel_figure_chapter_3_univariate_ibd2mix_lostruct_",date,".png"),height=4,width=6,units = "in",
     res=300); {
       library(RColorBrewer)
       cols=c(brewer.pal(8,"Dark2")[c(1,2,3,7,4)],"grey")
       ## four panels to see if same
       par(mfrow=c(2,2),cex.axis=1)
       par(mar=c(0.1,4,0.3,0.1))
-      boxplot(lostruct$MEAN_FST[lostruct$MOSTA.1MODEL1!=""]~lostruct$MOSTA.1MODEL1[lostruct$MOSTA.1MODEL1!=""],
+      boxplot(lostruct$MEAN_FST_100[lostruct$MOSTA.1MODEL1!=""]~lostruct$MOSTA.1MODEL1[lostruct$MOSTA.1MODEL1!=""],
               ylab="Mean Fst",xlab="Best Model",
               xaxt="n",col=cols,border=c(rep("black",4),cols[5:6]))
       legend("topright",legend=c("IBA","IBB","IBD","IBE","IBH","MIX"),
              col=cols,fill=cols,cex=0.8,ncol=1)
-      b=boxplot(lostruct$MEAN_DXY[lostruct$MOSTA.1MODEL1!=""]~lostruct$MOSTA.1MODEL1[lostruct$MOSTA.1MODEL1!=""],
+      b=boxplot(lostruct$MEAN_DXY_100[lostruct$MOSTA.1MODEL1!=""]~lostruct$MOSTA.1MODEL1[lostruct$MOSTA.1MODEL1!=""],
                 col=cols,border=c(rep("black",5),cols[6]),xaxt="n",
                 ylab="Mean Dxy",
                 xlab="Best Model",las=1)
@@ -349,25 +356,25 @@ png("four_panel_figure_chapter_3_univariate_ibd2mix_lostruct_10mar2021.png",heig
               na.action="na.pass",
               ylab="Percent Missing",xaxt="n",
               xlab="Best Model",las=1)
-      boxplot(lostruct$MEAN_RECOMB[lostruct$MOSTA.1MODEL1!=""]/(1e-9)~lostruct$MOSTA.1MODEL1[lostruct$MOSTA.1MODEL1!=""],
+      boxplot(lostruct$MEAN_RECOMB_100[lostruct$MOSTA.1MODEL1!=""]/(1e-9)~lostruct$MOSTA.1MODEL1[lostruct$MOSTA.1MODEL1!=""],
               col=cols,border=c(rep("black",5),cols[6]),xaxt="n",
               ylab="Mean Recombination Rate",
               xlab="Best Model",las=2)
     }
 dev.off()
 
-png("four_panel_figure_chapter_3_univariate_ibd2mix_10mar2021.png",height=4,width=6,units = "in",
+png(paste("four_panel_figure_chapter_3_univariate_ibd2mix_",date,".png"),height=4,width=6,units = "in",
     res=300); {
 library(RColorBrewer)
 cols=c(brewer.pal(8,"Dark2")[c(1,2,3,7,4)],"grey")
 ## four panels to see if same
 par(mfrow=c(2,2))
 par(mar=c(0.1,4,0.3,0.1))
-#boxplot(df$MEAN_FST[df$MOSTA.1MODEL1!=""]~df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""],
+#boxplot(df$MEAN_FST_100[df$MOSTA.1MODEL1!=""]~df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""],
 #        col=cols,xaxt="n",
 #        ylab="Mean Fst",
 #        xlab="Best Model",las=2)
-plotrix::gap.boxplot(df$MEAN_FST[df$MOSTA.1MODEL1!=""]~df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""],
+plotrix::gap.boxplot(df$MEAN_FST_100[df$MOSTA.1MODEL1!=""]~df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""],
                      gap=list(top=c(0.22,0.56),bottom=c(NA,NA)),
                      axes=F,ylim=c(0.01,0.58),ylab="Mean Fst",xlab="Best Model",
                      xaxt="n",col=cols)
@@ -376,7 +383,7 @@ legend("topright",legend=c("IBA","IBB","IBD","IBE","IBH","MIX"),
 title(ylab="Mean Fst")
 axis(2,labels=c(seq(0,0.2,0.05),0.57),
      at=c(seq(0,0.2,0.05),0.235),tick=T,las=1)
-boxplot(df$MEAN_DXY[df$MOSTA.1MODEL1!=""]~df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""],
+boxplot(df$MEAN_DXY_100[df$MOSTA.1MODEL1!=""]~df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""],
         col=cols,xaxt="n",
         ylab="Mean Dxy",
         xlab="Best Model",las=2)
@@ -384,26 +391,26 @@ boxplot(df$PERCENT_MISSING[df$MOSTA.1MODEL1!=""]*100~df$MOSTA.1MODEL1[df$MOSTA.1
         col=cols,xaxt="n",
         ylab="Percent Missing",
         xlab="Best Model",las=2)
-boxplot(df$MEAN_RECOMB[df$MOSTA.1MODEL1!=""]/(1e-9)~df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""],
+boxplot(df$MEAN_RECOMB_100[df$MOSTA.1MODEL1!=""]/(1e-9)~df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""],
         col=cols,xaxt="n",
         ylab="Mean Recombination Rate (x 1^-9)",
         xlab="Best Model",las=2)
 }
 dev.off()
 
-png("four_panel_figure_chapter_3_multivariate_ibd2mix_lostruct_10mar2021.png",height=4,width=6,units = "in",
+png(paste("four_panel_figure_chapter_3_multivariate_ibd2mix_lostruct_",date,".png"),height=4,width=6,units = "in",
     res=300); {
       library(RColorBrewer)
       cols=c(brewer.pal(8,"Dark2")[c(1,7,4)],"grey")
       ## four panels to see if same
       par(mfrow=c(2,2),cex.axis=1)
       par(mar=c(0.1,4,0.3,0.1))
-      boxplot(lostruct$MEAN_FST[lostruct$MOSTA.1MODEL3!=""]~lostruct$MOSTA.1MODEL3[lostruct$MOSTA.1MODEL3!=""],
+      boxplot(lostruct$MEAN_FST_100[lostruct$MOSTA.1MODEL3!=""]~lostruct$MOSTA.1MODEL3[lostruct$MOSTA.1MODEL3!=""],
               ylab="Mean Fst",xlab="Best Model",
               xaxt="n",col=cols,border=c(rep("black",3),cols[4]))
       legend("topright",legend=c("IBA","IBE","IBH","MIX"),
              col=cols,fill=cols,cex=0.8,ncol=1)
-      b=boxplot(lostruct$MEAN_DXY[lostruct$MOSTA.1MODEL3!=""]~lostruct$MOSTA.1MODEL3[lostruct$MOSTA.1MODEL3!=""],
+      b=boxplot(lostruct$MEAN_DXY_100[lostruct$MOSTA.1MODEL3!=""]~lostruct$MOSTA.1MODEL3[lostruct$MOSTA.1MODEL3!=""],
                 col=cols,border=c(rep("black",5),cols[6]),xaxt="n",
                 ylab="Mean Dxy",
                 xlab="Best Model",las=1)
@@ -412,7 +419,7 @@ png("four_panel_figure_chapter_3_multivariate_ibd2mix_lostruct_10mar2021.png",he
               na.action="na.pass",
               ylab="Percent Missing",xaxt="n",
               xlab="Best Model",las=1)
-      boxplot(lostruct$MEAN_RECOMB[lostruct$MOSTA.1MODEL3!=""]/(1e-9)~lostruct$MOSTA.1MODEL3[lostruct$MOSTA.1MODEL3!=""],
+      boxplot(lostruct$MEAN_RECOMB_100[lostruct$MOSTA.1MODEL3!=""]/(1e-9)~lostruct$MOSTA.1MODEL3[lostruct$MOSTA.1MODEL3!=""],
               col=cols,border=c(rep("black",5),cols[6]),xaxt="n",
               ylab="Mean Recombination Rate",
               xlab="Best Model",las=2)
@@ -420,18 +427,18 @@ png("four_panel_figure_chapter_3_multivariate_ibd2mix_lostruct_10mar2021.png",he
 dev.off()
 
 
-png("four_panel_figure_chapter_3_multivariate_10mar2021.png",height=4,width=6,units = "in",
+png(paste("four_panel_figure_chapter_3_multivariate_",date,".png"),height=4,width=6,units = "in",
     res=300); {
 library(RColorBrewer)
 cols=c(brewer.pal(8,"Dark2")[c(1,7,4)],"grey")
 ## four panels to see if same
 par(mfrow=c(2,2))
 par(mar=c(0.1,4,0.3,0.1))
-#boxplot(df$MEAN_FST[df$MOSTA.1MODEL3!=""]~df$MOSTA.1MODEL3[df$MOSTA.1MODEL3!=""],
+#boxplot(df$MEAN_FST_100[df$MOSTA.1MODEL3!=""]~df$MOSTA.1MODEL3[df$MOSTA.1MODEL3!=""],
 #        col=cols,xaxt="n",
 #        ylab="Mean Fst",
 #        xlab="Best Model",las=2)
-plotrix::gap.boxplot(df$MEAN_FST[df$MOSTA.1MODEL3!=""]~df$MOSTA.1MODEL3[df$MOSTA.1MODEL3!=""],
+plotrix::gap.boxplot(df$MEAN_FST_100[df$MOSTA.1MODEL3!=""]~df$MOSTA.1MODEL3[df$MOSTA.1MODEL3!=""],
                      gap=list(top=c(0.22,0.56),bottom=c(NA,NA)),
                      axes=F,ylim=c(0.01,0.58),ylab="Mean Fst",xlab="Best Model",
                      xaxt="n",col=cols)
@@ -440,7 +447,7 @@ legend("topright",legend=c("IBA","IBE","IBH","MIX"),
 title(ylab="Mean Fst")
 axis(2,labels=c(seq(0,0.2,0.05),0.57),
      at=c(seq(0,0.2,0.05),0.235),tick=T,las=1)
-boxplot(df$MEAN_DXY[df$MOSTA.1MODEL3!=""]~df$MOSTA.1MODEL3[df$MOSTA.1MODEL3!=""],
+boxplot(df$MEAN_DXY_100[df$MOSTA.1MODEL3!=""]~df$MOSTA.1MODEL3[df$MOSTA.1MODEL3!=""],
         col=cols,xaxt="n",
         ylab="Mean Dxy",
         xlab="Best Model",las=2)
@@ -448,7 +455,7 @@ boxplot(df$PERCENT_MISSING[df$MOSTA.1MODEL3!=""]*100~df$MOSTA.1MODEL3[df$MOSTA.1
         col=cols,xaxt="n",
         ylab="Percent Missing",
         xlab="Best Model",las=2)
-boxplot(df$MEAN_RECOMB[df$MOSTA.1MODEL3!=""]/(1e-9)~df$MOSTA.1MODEL3[df$MOSTA.1MODEL3!=""],
+boxplot(df$MEAN_RECOMB_100[df$MOSTA.1MODEL3!=""]/(1e-9)~df$MOSTA.1MODEL3[df$MOSTA.1MODEL3!=""],
         col=cols,xaxt="n",
         ylab="Mean Recombination Rate (x 1^-9)",
         xlab="Best Model",las=2)
@@ -457,12 +464,12 @@ dev.off()
 
 
 
-df = df[df$SPECIES!="NITENS",]
+#df = df[df$SPECIES!="NITENS",]
 
 ## aov model -- BIVARIATE
-model1=aov(df$MEAN_RECOMB[df$MOSTA.1MODEL2!=""] ~ df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""])
-model2=aov(df$MEAN_FST[df$MOSTA.1MODEL2!=""] ~ df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""])
-model3=aov(df$MEAN_DXY[df$MOSTA.1MODEL2!=""] ~ df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""])
+model1=aov(df$MEAN_RECOMB_100[df$MOSTA.1MODEL2!=""] ~ df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""])
+model2=aov(df$MEAN_FST_100[df$MOSTA.1MODEL2!=""] ~ df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""])
+model3=aov(df$MEAN_DXY_100[df$MOSTA.1MODEL2!=""] ~ df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""])
 model4=aov(df$PERCENT_MISSING[df$MOSTA.1MODEL3!=""] ~ df$MOSTA.1MODEL3[df$MOSTA.1MODEL3!=""])
 model4n=aov(df$PERCENT_MISSING[df$MOSTA.1MODEL3!="" & df$SPECIES!="NITENS"] ~ df$MOSTA.1MODEL3[df$MOSTA.1MODEL3!="" & df$SPECIES!="NITENS"])
 model5=aov(log(df$CHROM_LENGTH[df$MOSTA.1MODEL2!=""]) ~ df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""])
@@ -486,9 +493,9 @@ TukeyHSD(model5) # ibd-iba 0.036m ibe-ibd 0.066, ibh-ibd = 0.027
 
 
 ## aov model -- UNIVARIATE
-model1=aov(df$MEAN_RECOMB[df$MOSTA.1MODEL1!=""] ~ df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""])
-model2=aov(df$MEAN_FST[df$MOSTA.1MODEL1!=""] ~ df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""])
-model3=aov(df$MEAN_DXY[df$MOSTA.1MODEL1!=""] ~ df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""])
+model1=aov(df$MEAN_RECOMB_100[df$MOSTA.1MODEL1!=""] ~ df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""])
+model2=aov(df$MEAN_FST_100[df$MOSTA.1MODEL1!=""] ~ df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""])
+model3=aov(df$MEAN_DXY_100[df$MOSTA.1MODEL1!=""] ~ df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""])
 model4=aov(df$PERCENT_MISSING[df$MOSTA.1MODEL1!=""] ~ df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""])
 model5=aov(log(df$CHROM_LENGTH[df$MOSTA.1MODEL1!=""]) ~ df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""])
 
@@ -505,11 +512,45 @@ TukeyHSD(model3) # ibd-iba 0.08, mix-iba 0.07, was none, lowest 0.5739302
 TukeyHSD(model4) # every comparison is significant?, was mix-iba 0, mix-ibd 0.0002208, mix-ibe 0.0000002, mix-ibh 0.0000002
 TukeyHSD(model5) # ibh-ibd 0.04, was none lowest is ibh-ibd 0.0767787
 
+## we need to test the contact suitability mean differently i think 
+boxplot(df$CONTACT_SUITABILITY_SD[df$MOSTA.1MODEL1!=""]~ df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""])
+aggregate(df$CONTACT_SUITABILITY_SD~df$MOSTA.1MODEL1,FUN=function(x){mean(x,na.rm=T)})
+tab=table(df$CONTACT_SUITABILITY_SD,df$MOSTA.1MODEL1)
+par(mfrow=c(2,3))
+plot(as.numeric(rownames(tab)),tab[,"IBA"],type="b")
+plot(as.numeric(rownames(tab)),tab[,"IBB"],type="b")
+plot(as.numeric(rownames(tab)),tab[,"IBD"],type="b")
+plot(as.numeric(rownames(tab)),tab[,"IBE"],type="b")
+plot(as.numeric(rownames(tab)),tab[,"IBH"],type="b")
+plot(as.numeric(rownames(tab)),tab[,"MIXED"],type="b")
+summary(lm(tab[,"IBA"]~as.numeric(rownames(tab))))
+summary(lm(tab[,"IBB"]~as.numeric(rownames(tab))))
+summary(lm(tab[,"IBD"]~as.numeric(rownames(tab))))
+summary(lm(tab[,"IBE"]~as.numeric(rownames(tab))))
+summary(lm(tab[,"IBH"]~as.numeric(rownames(tab))))
+summary(lm(tab[,"MIXED"]~as.numeric(rownames(tab))))
+
+model6=aov((df$CONTACT_SUITABILITY_MEAN[df$MOSTA.1MODEL1!=""]) ~ df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""])
+summary(model6) 
+TukeyHSD(model6)
+
+model6=aov((df$CONTACT_SUITABILITY_SD[df$MOSTA.1MODEL1!=""]) ~ df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""])
+summary(model6) 
+TukeyHSD(model6)
+
+model6=aov((df$TAJIMAS[df$MOSTA.1MODEL1!=""]) ~ df$MOSTA.1MODEL1[df$MOSTA.1MODEL1!=""])
+summary(model6) 
+TukeyHSD(model6)
+
+dfpca=df[,c("CONTACT_SUITABILITY_MEAN","CONTACT_SUITABILITY_SD",
+            "HZAR_CENTER","HZAR_WIDTH","MEAN_DXY_100","MEAN_FST_100",
+            "MEAN_RECOMB_100","PERCENT_MISSING","TAJIMAS")]
+dfpca=dfpca[complete.cases(dfpca),]
 
 ## aov model -- TRIVARIATE
-model1=aov(df$MEAN_RECOMB[df$MOSTA.1MODEL3!=""] ~ df$MOSTA.1MODEL3[df$MOSTA.1MODEL3!=""])
-model2=aov(df$MEAN_FST[df$MOSTA.1MODEL3!=""] ~ df$MOSTA.1MODEL3[df$MOSTA.1MODEL3!=""])
-model3=aov(df$MEAN_DXY[df$MOSTA.1MODEL3!=""] ~ df$MOSTA.1MODEL3[df$MOSTA.1MODEL3!=""])
+model1=aov(df$MEAN_RECOMB_100[df$MOSTA.1MODEL3!=""] ~ df$MOSTA.1MODEL3[df$MOSTA.1MODEL3!=""])
+model2=aov(df$MEAN_FST_100[df$MOSTA.1MODEL3!=""] ~ df$MOSTA.1MODEL3[df$MOSTA.1MODEL3!=""])
+model3=aov(df$MEAN_DXY_100[df$MOSTA.1MODEL3!=""] ~ df$MOSTA.1MODEL3[df$MOSTA.1MODEL3!=""])
 model4=aov(df$PERCENT_MISSING[df$MOSTA.1MODEL3!=""] ~ df$MOSTA.1MODEL3[df$MOSTA.1MODEL3!=""])
 model5=aov(log(df$CHROM_LENGTH[df$MOSTA.1MODEL3!=""]) ~ df$MOSTA.1MODEL3[df$MOSTA.1MODEL3!=""])
 
@@ -528,20 +569,20 @@ TukeyHSD(model5) # none
 
 
 
-png("four_panel_figure_chapter_3_nothypotheses_10mar2021.png",height=4,width=6,units = "in",
+png(paste("four_panel_figure_chapter_3_nothypotheses_",date,".png"),height=4,width=6,units = "in",
     res=300); {
 library(RColorBrewer)
 cols=c(brewer.pal(8,"Dark2")[c(1,7,3,4)],"grey",brewer.pal(8,"Dark2")[c(7)])
 ## four panels to see if same
 par(mfrow=c(2,2))
 par(mar=c(4,4,0,0))
-boxplot(df$MEAN_FST[df$MOST.1MODEL2!=""]~df$MOST.1MODEL2[df$MOST.1MODEL2!=""],
+boxplot(df$MEAN_FST_100[df$MOST.1MODEL2!=""]~df$MOST.1MODEL2[df$MOST.1MODEL2!=""],
         col=cols,
         ylab="Mean Fst (cut off)",ylim=c(0,0.21),
         xlab="Best Model",las=2)
 #legend("topright",legend=c("IBA","IBD","IBE","IBH","MIX"),
 #       col=cols,fill=cols)
-boxplot(df$MEAN_DXY[df$MOST.1MODEL2!=""]~df$MOST.1MODEL2[df$MOST.1MODEL2!=""],
+boxplot(df$MEAN_DXY_100[df$MOST.1MODEL2!=""]~df$MOST.1MODEL2[df$MOST.1MODEL2!=""],
         col=cols,
         ylab="Mean Dxy",
         xlab="Best Model",las=2)
@@ -549,7 +590,7 @@ boxplot(df$PERCENT_MISSING[df$MOST.1MODEL2!=""]*100~df$MOST.1MODEL2[df$MOST.1MOD
         col=cols,
         ylab="Percent Missing",
         xlab="Best Model",las=2)
-boxplot(df$MEAN_RECOMB[df$MOST.1MODEL2!=""]/(1e-9)~df$MOST.1MODEL2[df$MOST.1MODEL2!=""],
+boxplot(df$MEAN_RECOMB_100[df$MOST.1MODEL2!=""]/(1e-9)~df$MOST.1MODEL2[df$MOST.1MODEL2!=""],
         col=cols,
         ylab="Mean Recombination Rate (x 1^-9)",
         xlab="Best Model",las=2)
@@ -557,9 +598,9 @@ boxplot(df$MEAN_RECOMB[df$MOST.1MODEL2!=""]/(1e-9)~df$MOST.1MODEL2[df$MOST.1MODE
 dev.off()
 
 ## aov model -- bivariate no hypotheses
-model1=aov(df$MEAN_RECOMB[df$MOST.1MODEL2!=""] ~ df$MOST.1MODEL2[df$MOST.1MODEL2!=""])
-model2=aov(df$MEAN_FST[df$MOST.1MODEL2!=""] ~ df$MOST.1MODEL2[df$MOST.1MODEL2!=""])
-MODEL3=aov(df$MEAN_DXY[df$MOST.1MODEL2!=""] ~ df$MOST.1MODEL2[df$MOST.1MODEL2!=""])
+model1=aov(df$MEAN_RECOMB_100[df$MOST.1MODEL2!=""] ~ df$MOST.1MODEL2[df$MOST.1MODEL2!=""])
+model2=aov(df$MEAN_FST_100[df$MOST.1MODEL2!=""] ~ df$MOST.1MODEL2[df$MOST.1MODEL2!=""])
+MODEL3=aov(df$MEAN_DXY_100[df$MOST.1MODEL2!=""] ~ df$MOST.1MODEL2[df$MOST.1MODEL2!=""])
 model4=aov(df$PERCENT_MISSING[df$MOST.1MODEL2!=""] ~ df$MOST.1MODEL2[df$MOST.1MODEL2!=""])
 
 summary(model1) # almost
@@ -671,7 +712,7 @@ cor((df[,c("TAJIMAS","PERCENT_MISSING","MEAN_FST","MEAN_DXY","MEAN_RECOMB")]),
 
 
 ## chrom lengths
-png("chromlengthtest.png")
+png(paste("chromlengthtest",date,".png",sep=""))
 library(RColorBrewer)
 cols=c(brewer.pal(8,"Dark2")[c(1,3,7,4)],"grey")
 plotrix::gap.boxplot(df$CHROM_LENGTH[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],col=cols,
@@ -702,17 +743,17 @@ TukeyHSD(modelC) #
 ## looking at new stats
 
 
-pdf("gdm_bivariate_all_sumstats_10mar2021.pdf",height=4,width=6); {
+pdf(paste("gdm_bivariate_all_sumstats_",date,".pdf",sep=""),height=4,width=6); {
 library(RColorBrewer)
 cols=c(brewer.pal(8,"Dark2")[c(1,3,7,4)],"grey")
 ## four panels to see if same
 par(mfrow=c(2,2),cex.axis=1)
 par(mar=c(0.1,4,0.3,0.1))
-#boxplot(df$MEAN_FST[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+#boxplot(df$MEAN_FST_100[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
 #        col=cols,xaxt="n",
 #        ylab="Mean Fst",
 #        xlab="Best Model",las=2)
-plotrix::gap.boxplot(df$MEAN_FST[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+plotrix::gap.boxplot(df$MEAN_FST_100[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
                      gap=list(top=c(0.22,0.56),bottom=c(NA,NA)),
                      axes=F,ylim=c(0.01,0.58),ylab="Mean Fst",xlab="Best Model",
                      xaxt="n",col=cols)
@@ -721,7 +762,7 @@ legend("topright",legend=c("IBA","IBD","IBE","IBH","MIX"),
 title(ylab="Mean Fst")
 axis(2,labels=c(seq(0,0.2,0.05),0.57),
      at=c(seq(0,0.2,0.05),0.235),tick=T,las=1)
-boxplot(df$MEAN_DXY[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+boxplot(df$MEAN_DXY_100[df$MOSTA.1MODEL2!=""]~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
         col=cols,xaxt="n",
         ylab="Mean Dxy",
         xlab="Best Model",las=1)
@@ -729,7 +770,7 @@ boxplot(df$PERCENT_MISSING[df$MOSTA.1MODEL2!=""]*100~df$MOSTA.1MODEL2[df$MOSTA.1
         col=cols,xaxt="n",
         ylab="Percent Missing",
         xlab="Best Model",las=1)
-boxplot(df$MEAN_RECOMB[df$MOSTA.1MODEL2!=""]/(1e-9)~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
+boxplot(df$MEAN_RECOMB_100[df$MOSTA.1MODEL2!=""]/(1e-9)~df$MOSTA.1MODEL2[df$MOSTA.1MODEL2!=""],
         col=cols,xaxt="n",
         ylab="Mean Recombination Rate",
         xlab="Best Model",las=2)
@@ -818,7 +859,7 @@ agg=aggregate(cbind(small[,1],small[,2],small[,3],
               ~small[,17],FUN=function(x){mean(x,na.rm=T)})
 colnames(agg) = colnames(small)[c(17,1:16)]
 
-pdf("gdm_bivariate_all_barplots_10mar2021.pdf",height=4,width=6); {
+pdf(paste("gdm_bivariate_all_barplots_",date,".pdf",sep=""),height=4,width=6); {
 library(RColorBrewer)
 cols=c(brewer.pal(8,"Dark2")[c(1,3,7,4)],"grey")
 ## four panels to see if same
@@ -835,9 +876,9 @@ dev.off()
 ## MODELS FOR LOSTRUCT ONLY
 
 ## aov model -- BIVARIATE
-model1=aov(lostruct$MEAN_RECOMB[lostruct$MOSTA.1MODEL2!=""] ~ lostruct$MOSTA.1MODEL2[lostruct$MOSTA.1MODEL2!=""])
-model2=aov(lostruct$MEAN_FST[lostruct$MOSTA.1MODEL2!=""] ~ lostruct$MOSTA.1MODEL2[lostruct$MOSTA.1MODEL2!=""])
-model3=aov(lostruct$MEAN_DXY[lostruct$MOSTA.1MODEL2!=""] ~ lostruct$MOSTA.1MODEL2[lostruct$MOSTA.1MODEL2!=""])
+model1=aov(lostruct$MEAN_RECOMB_100[lostruct$MOSTA.1MODEL2!=""] ~ lostruct$MOSTA.1MODEL2[lostruct$MOSTA.1MODEL2!=""])
+model2=aov(lostruct$MEAN_FST_100[lostruct$MOSTA.1MODEL2!=""] ~ lostruct$MOSTA.1MODEL2[lostruct$MOSTA.1MODEL2!=""])
+model3=aov(lostruct$MEAN_DXY_100[lostruct$MOSTA.1MODEL2!=""] ~ lostruct$MOSTA.1MODEL2[lostruct$MOSTA.1MODEL2!=""])
 model4=aov(lostruct$PERCENT_MISSING[lostruct$MOSTA.1MODEL2!=""] ~ lostruct$MOSTA.1MODEL2[lostruct$MOSTA.1MODEL2!=""])
 model4n=aov(lostruct$PERCENT_MISSING[lostruct$MOSTA.1MODEL2!="" & lostruct$SPECIES!="NITENS"] ~ lostruct$MOSTA.1MODEL2[lostruct$MOSTA.1MODEL2!="" & lostruct$SPECIES!="NITENS"])
 model5=aov(log(lostruct$CHROM_LENGTH[lostruct$MOSTA.1MODEL2!=""]) ~ lostruct$MOSTA.1MODEL2[lostruct$MOSTA.1MODEL2!=""])
@@ -857,9 +898,9 @@ TukeyHSD(model4n) # ns          BEFORE ALL DATA: ibe-ibd 0.0000057, ibh-ibe 0.00
 TukeyHSD(model5) # ns
 
 ## aov model -- UNIVARIATE
-model1=aov(lostruct$MEAN_RECOMB[lostruct$MOSTA.1MODEL1!=""] ~ lostruct$MOSTA.1MODEL1[lostruct$MOSTA.1MODEL1!=""])
-model2=aov(lostruct$MEAN_FST[lostruct$MOSTA.1MODEL1!=""] ~ lostruct$MOSTA.1MODEL1[lostruct$MOSTA.1MODEL1!=""])
-model3=aov(lostruct$MEAN_DXY[lostruct$MOSTA.1MODEL1!=""] ~ lostruct$MOSTA.1MODEL1[lostruct$MOSTA.1MODEL1!=""])
+model1=aov(lostruct$MEAN_RECOMB_100[lostruct$MOSTA.1MODEL1!=""] ~ lostruct$MOSTA.1MODEL1[lostruct$MOSTA.1MODEL1!=""])
+model2=aov(lostruct$MEAN_FST_100[lostruct$MOSTA.1MODEL1!=""] ~ lostruct$MOSTA.1MODEL1[lostruct$MOSTA.1MODEL1!=""])
+model3=aov(lostruct$MEAN_DXY_100[lostruct$MOSTA.1MODEL1!=""] ~ lostruct$MOSTA.1MODEL1[lostruct$MOSTA.1MODEL1!=""])
 model4=aov(lostruct$PERCENT_MISSING[lostruct$MOSTA.1MODEL1!=""] ~ lostruct$MOSTA.1MODEL1[lostruct$MOSTA.1MODEL1!=""])
 model4n=aov(lostruct$PERCENT_MISSING[lostruct$MOSTA.1MODEL1!="" & lostruct$SPECIES!="NITENS"] ~ lostruct$MOSTA.1MODEL1[lostruct$MOSTA.1MODEL1!="" & lostruct$SPECIES!="NITENS"])
 model5=aov(log(lostruct$CHROM_LENGTH[lostruct$MOSTA.1MODEL1!=""]) ~ lostruct$MOSTA.1MODEL1[lostruct$MOSTA.1MODEL1!=""])
@@ -880,9 +921,9 @@ TukeyHSD(model5) # ns
 
 
 ## aov model -- TRIVARIATE
-model1=aov(lostruct$MEAN_RECOMB[lostruct$MOSTA.1MODEL3!=""] ~ lostruct$MOSTA.1MODEL3[lostruct$MOSTA.1MODEL3!=""])
-model2=aov(lostruct$MEAN_FST[lostruct$MOSTA.1MODEL3!=""] ~ lostruct$MOSTA.1MODEL3[lostruct$MOSTA.1MODEL3!=""])
-model3=aov(lostruct$MEAN_DXY[lostruct$MOSTA.1MODEL3!=""] ~ lostruct$MOSTA.1MODEL3[lostruct$MOSTA.1MODEL3!=""])
+model1=aov(lostruct$MEAN_RECOMB_100[lostruct$MOSTA.1MODEL3!=""] ~ lostruct$MOSTA.1MODEL3[lostruct$MOSTA.1MODEL3!=""])
+model2=aov(lostruct$MEAN_FST_100[lostruct$MOSTA.1MODEL3!=""] ~ lostruct$MOSTA.1MODEL3[lostruct$MOSTA.1MODEL3!=""])
+model3=aov(lostruct$MEAN_DXY_100[lostruct$MOSTA.1MODEL3!=""] ~ lostruct$MOSTA.1MODEL3[lostruct$MOSTA.1MODEL3!=""])
 model4=aov(lostruct$PERCENT_MISSING[lostruct$MOSTA.1MODEL3!=""] ~ lostruct$MOSTA.1MODEL3[lostruct$MOSTA.1MODEL3!=""])
 model4n=aov(lostruct$PERCENT_MISSING[lostruct$MOSTA.1MODEL3!="" & lostruct$SPECIES!="NITENS"] ~ lostruct$MOSTA.1MODEL3[lostruct$MOSTA.1MODEL3!="" & lostruct$SPECIES!="NITENS"])
 model5=aov(log(lostruct$CHROM_LENGTH[lostruct$MOSTA.1MODEL3!=""]) ~ lostruct$MOSTA.1MODEL3[lostruct$MOSTA.1MODEL3!=""])

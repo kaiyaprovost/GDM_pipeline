@@ -1,29 +1,29 @@
 ## need to change this to be able to handle many different csv files at once 
 
-## Rscript run_GDMS.R "BILINEATA" "1" "/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER2_GENOMES/ANALYSIS/called_geno/Amphispiza-bilineata-called.geno.fixedchroms.converted.sorted.nospace.vcf.gz_#1B9E77.vcf"
+# Rscript "/Users/kprovost/Documents/GitHub/GDM_pipeline/scripts/GDM Analyses/run_GDMS.R" "BILINEATA" "1" \
+# "/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER2_GENOMES/ANALYSIS/called_geno/Amphispiza-bilineata-called.geno.fixedchroms.converted.sorted.nospace.vcf.gz_#1B9E77.vcf"
 rm(list=ls())
 args = commandArgs(trailingOnly=TRUE)
-
-run_old=F
-
+print(length(args))
+run_old=T
 
 if (length(args)<=0) {
-  spplist=(c("FUSCA"
-    #"BELLII",  "BILINEATA", "BRUNNEICAPILLUS","FLAVICEPS","FUSCA",
-    #"CRISSALE","CURVIROSTRE","MELANURA","NITENS","SINUATUS"
+  spplist=(c(
+    "BELLII",  "BILINEATA", "BRUNNEICAPILLUS","FLAVICEPS","FUSCA",
+    "CRISSALE","CURVIROSTRE","MELANURA","NITENS","SINUATUS"
   ))
   chromlist=(c("10","11","12","13","14","15",
-    "16",
-    "17","18","19",
-    "1",
-    "1A","1B","2",
-    "20","21","22","23","24","25","26","27","28",
-    "3",
-    "4","4A","5","6","7",
-    "8","9",
-    "LG2",
-    "LG5","LGE22",
-    "mtDNA","Z"
+               "16",
+               "17","18","19",
+               "1",
+               "1A","1B","2",
+               "20","21","22","23","24","25","26","27","28",
+               "3",
+               "4","4A","5","6","7",
+               "8","9",
+               "LG2",
+               "LG5","LGE22",
+               "mtDNA","Z"
   ))
   genedistmatrix=NULL
 } else if (length(args)==1) {
@@ -33,7 +33,7 @@ if (length(args)<=0) {
                "mtDNA","Z"
   ))
   genedistmatrix=NULL
-} else if (length(args==2)) {
+} else if (length(args)==2) {
   spplist=args[1]
   chromlist=args[2]
   genedistmatrix=NULL
@@ -42,6 +42,14 @@ if (length(args)<=0) {
   chromlist=args[2]
   genedistmatrix=args[3]
 }
+
+
+print(spplist)
+print(chromlist)
+print(genedistmatrix)
+
+
+
 # Rscript "/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/scripts/run_GDMS.R" >> "/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/gdm_results_jan2020_full_BELLII.txt" 2>&1; 
 #library(vegan); library(sp); library(sgdm); library(rgdal); library(raster); library(parallel); library(iterators); library(gdm); library(foreach); library(ecodist); library(doParallel)
 
@@ -439,9 +447,9 @@ gdm.varImp.edit = function (spTable, geo, splines = NULL, knots = NULL, fullMode
 }
 loadMorphData = function(spp,doGENE=F) {
   if (doGENE == F) {
-    morph = "/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/morphology/measurements/aggregated datasets/KLP_Master_Spreadsheet_Morphology_AGGREGATED_19_July_2019.csv"
+    morph = "/Users/kprovost/Dropbox (AMNH)/KLP_Master_Spreadsheet_Morphology_AGGREGATED_19_July_2019.csv"
     morphdf = read.csv(morph)
-    morphdf = morphdf[,2:40]
+    #morphdf = morphdf[,2:40]
     #morphdata = morphdf[,c(3:9)]
   } else {
     morph = "/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/CATALOG_BY_SPECIES.txt"
@@ -451,7 +459,8 @@ loadMorphData = function(spp,doGENE=F) {
   }
   
   morphdf = unique(morphdf)
-  morphdf = morphdf[morphdf$CATALOG.NUMBER != "",]
+  if("CATALOG.NUMBER" %in% colnames(morphdf)){  morphdf = morphdf[morphdf$CATALOG.NUMBER != "",] } 
+  
   morphlocs = morphdf[,c("LAT","LONG")]
   morphspp = morphdf$SPP
   #morphdf=morphdf[!duplicated(as.list(morphdf))]
@@ -475,11 +484,7 @@ loadEnvData = function(morphlocs,morphspp,morphdf,doGENE=F,spp,verbose=F,doEnvpc
   data = data[data$CATALOG.NUMBER != "",]
   rownames(data) = make.names(data$CATALOG.NUMBER,unique=T)
   if(verbose==T){print("fin rownames")}
-  if (doGENE == F) {
-    bioclim = data[,c(40:58)] 
-  } else {
-    bioclim = data[,c(5:23)] 
-  }
+  bioclim = data[,c((ncol(data)-18):ncol(data))] 
   colnames(bioclim) = c("BIO1","BIO2","BIO3","BIO4","BIO5","BIO6","BIO7","BIO8","BIO9","BIO10","BIO11","BIO12","BIO13","BIO14","BIO15","BIO16","BIO17","BIO18","BIO19")
   bioclim = bioclim[complete.cases(bioclim),]
   
@@ -617,6 +622,8 @@ generateMatrixCsvString = function(matVariable,doPCA=F,doGENE=F,doChroms=F,spp,w
                                    baseabun="/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/BY_SPECIES/CONVERTED/",
                                    basepres=baseabun,basemid=baseabun,baselgm=baseabun,
                                    baseibd=basestr,baseenv=basestr,basegene=basestr) {
+  if(verbose==T){print("MAT VARIABLE")}
+  if(verbose==T){print(matVariable)}
   if(matVariable=="STR") {
     csvstring=paste(basestr,spp,"/",spp,"_distancematrix_STR.csv",sep = "")
   } else if (matVariable=="PRES") {
@@ -1088,18 +1095,18 @@ runGDMs = function(doimp = F, doPCA = F,doGENE = F,whichpca = 1,univariate = T,d
       for (matVariable in matList) {
         print(matVariable)
         
-        if(is.null(genedistmatrix)) {
+        if(is.null(genedistmatrix) | matVariable != "GENE") {
           csvstring = generateMatrixCsvString(matVariable,doPCA,doGENE,doChroms,spp,whichpca,whichchrom,verbose=verbose)
-        } else if (matVariable == "GENE") {
-          csvstring = genedistmatrix
-          if(verbose==T){print(paste("LOADED FILE:",csvstring))}
         } else {
-          csvstring = generateMatrixCsvString(matVariable,doPCA,doGENE,doChroms,spp,whichpca,whichchrom,verbose=verbose)
-        }
+          if(verbose==T){print(paste("IMPORTING GENEDISTMATRIX"))}
+          csvstring = genedistmatrix
+        } 
+        if(verbose==T){print(paste("LOADED FILE:",csvstring))}
         
         if(sum(!file.exists(csvstring))!=0){
           toexit=T
           print("FILE DOES NOT EXIST, SKIPPING")
+          print(csvstring)
         } else {
           
           ## changing these lines to be a for loop over the csvstrings?
@@ -1352,7 +1359,7 @@ runGDMs = function(doimp = F, doPCA = F,doGENE = F,whichpca = 1,univariate = T,d
         #tempsum=print(gdm::summary.gdm(model))
         #print(class(tempsum))
         
-        capture.output(gdm::summary.gdm(model),file=modelstring2)
+        capture.output(summary(model),file=modelstring2)
         
         if(verbose==T){print("calculate start")}
         
@@ -1429,350 +1436,507 @@ runGDMs = function(doimp = F, doPCA = F,doGENE = F,whichpca = 1,univariate = T,d
 #spplist="BELLII"; spp="BELLII"
 #matList=c("GENE","STR","PRES","MID","LGM","IBD","ENV","ABUN")
 matList=c("GENE","STR","IBD","PRES","ABUN","ENV","LGM")
-doimp = F; doPCA = F; doGENE = T; whichpca = 1; 
-univariate = F; dogeo = F; doChroms = T; whichchrom="1"
+doimp = F; doPCA = F; doGENE = F; whichpca = 1; 
+univariate = F; dogeo = F; doChroms = F; whichchrom="1"
 doEnvpcs = F;
 verbose=F;
 numenvpcs=3;
 chrom=1
-## univariate WITH the pcas? 
-
-
-
 
 ## generate the combinations need to run 
-## univariate is done
+## THIS IS ALL OF THEM
+# combinations = c(combn(2:length(matList),1,simplify = F),
+#                  combn(2:length(matList),2,simplify = F),
+#                  combn(2:length(matList),3,simplify = F)
+# )
+combos_1 = combn(2:length(matList),1,simplify=F)
+combos_2 = combn(3:length(matList),1,simplify=F)
+combos_3 = combn(4:length(matList),1,simplify=F)
+combos_1=lapply(combos_1,FUN=function(x){c(1,x)})
+combos_2=lapply(combos_2,FUN=function(x){c(1,2,x)})
+combos_3=lapply(combos_3,FUN=function(x){c(1,2,3,x)})
+combinations = c(combos_1,combos_2,combos_3)
+#combinations = c(combos_1)
 
-## thisset = i:length(matlist)
-## numbers = forloop 2:length(thisset)
+runGDMs(doimp = F,doPCA = F,doGENE = F,whichpca = 1,
+        univariate = F,dogeo = F,doChroms = T,
+        whichchrom=1,matList=c("GENE","STR","IBD","LGM"),
+        doEnvpcs=F,
+        verbose=F,numenvpcs=3,overwrite=F)
 
-combinations = c(combn(2:length(matList),1,simplify = F),
-                 combn(2:length(matList),2,simplify = F),
-                 combn(2:length(matList),3,simplify = F)
-                 #,
-                 #combn(2:length(matList),4,simplify = F),
-                 #combn(2:length(matList),5,simplify = F),
-                 #combn(2:length(matList),6,simplify = F)
-)
-
-#combinations = c(combn(2:length(matList),1,simplify = F))
-
-bigspecieslist=c("Melozone-fusca"
-  #"Amphispiza-bilineata"#,
-                 #"Auriparus-flaviceps",
-                 #"Campylorhynchus-brunneicapillus",
-                 #"Cardinalis-sinuatus",
-                 #"Phainopepla-nitens",
-                 #"Polioptila-melanura",
-                 #"Toxostoma-crissale",
-                 #"Toxostoma-curvirostre",
-                 #"Vireo-bellii"
-)
-
-color_chroms = c("black","#1B9E77","#7570B3","#D95F02","empty")
-for(spp in (bigspecieslist)){
-  ## added a "-" in front of the sample list to get the rest of the stuff
-  #for(combo in sample(combinations[-c(1:11,22:25)])){
-  for(combo in sample(combinations)){
+for(spp in sort(spplist)[10:7]){
+  for(combo in combinations){
+    matList=c("GENE","STR","IBD","PRES","ABUN","ENV","LGM")
     tempmat = matList[unique(c(1,combo))]
-    for (i in sample(1:length(color_chroms))){
-      print(color_chroms[i])
-      #genedistmatrix = paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER2_GENOMES/ANALYSIS/lostruct_2021_done/trees_and_dists/",spp,"_distancematrix_",color_chroms[i],".csv",sep="")
-      #genedistmatrix = paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER2_GENOMES/ANALYSIS/called_geno/SPECIES/DISTS/",spp,"_distancematrix_",color_chroms[i],".csv",sep="")
-      genedistmatrix = paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER2_GENOMES/ANALYSIS/lostruct_2021_done/",spp,"_distancematrix_",color_chroms[i],".csv",sep="")
-      if(file.exists(genedistmatrix)){
-        capsspp=toupper(strsplit(spp,"-")[[1]][2])
-        runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
-                univariate = F,dogeo = F,doChroms = T,
-                whichchrom=color_chroms[i],matList=tempmat,spplist=capsspp,#spplist=spp,
-                doEnvpcs=F,
-                verbose=T,numenvpcs=3,genedistmatrix=genedistmatrix,overwrite=F)
-      }
-    }
+    print(combo)
+    print(spp)
+    try({
+      runGDMs(doimp = F,doPCA = F,doGENE = F,whichpca = 1,
+              univariate = F,dogeo = F,doChroms = F,overwrite = F,
+              whichchrom=chrom,matList=tempmat,spplist=spp,doEnvpcs=F,
+              verbose=T,numenvpcs=3)
+    })
+    try({
+      runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 1,
+              univariate = F,dogeo = F,doChroms = F,overwrite = F,
+              whichchrom=chrom,matList=tempmat,spplist=spp,doEnvpcs=F,
+              verbose=F,numenvpcs=3)
+    })
+    try({
+      runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 2,
+              univariate = F,dogeo = F,doChroms = F,overwrite = F,
+              whichchrom=chrom,matList=tempmat,spplist=spp,doEnvpcs=F,
+              verbose=F,numenvpcs=3)
+    })
+    try({
+      runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 3,
+              univariate = F,dogeo = F,doChroms = F,overwrite = F,
+              whichchrom=chrom,matList=tempmat,spplist=spp,doEnvpcs=F,
+              verbose=F,numenvpcs=3)
+    })
+    
   }
 }
 
+genemat_list_x = list.files(path="/Users/kprovost/Documents",
+                            pattern="ngsdist_2022.converted.txt$",full.names = T)
 
-if(run_old==T){
+genemat_list = genemat_list_x[grepl("ALL",genemat_list_x)]
+#genemat_spp = rep("BELLII",length(genemat_list))
+#genemat_spp = c("BELLII","BILINEATA","BRUNNEICAPILLUS","CRISSALE","CURVIROSTRE",
+#                "FLAVICEPS","FUSCA","MELANURA","NITENS","SINUATUS")
+genemat_spp=c("BILINEATA","BILINEATA")
+
+print("RUN GDM")
+#for(genedistmatrix_i in c(1)){
+for(genedistmatrix_i in 1:length(genemat_list)){
+  genedistmatrix = genemat_list[genedistmatrix_i]
+  spp = genemat_spp[genedistmatrix_i]
   
-  for(combo in combinations){
-    tempmat = matList[c(1,combo)]
-    runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
-            univariate = F,dogeo = F,doChroms = F,
-            whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
-            verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
-  }
-  for(combo in combinations){
-    for(chrom in sample(chromlist)){
-      runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
-              univariate = F,dogeo = F,doChroms = T,
-              whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
-              verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
-    }
-  }
-  for(combo in combinations){
-    runGDMs(doimp = F,doPCA = F,doGENE = F,whichpca = 1,
-            univariate = F,dogeo = F,doChroms = F,
-            whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
-            verbose=F,numenvpcs=3)
-  }
-  for(combo in combinations){
-    runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 1,
-            univariate = F,dogeo = F,doChroms = F,
-            whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
-            verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
-  }
-  for(combo in combinations){
-    runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 2,
-            univariate = F,dogeo = F,doChroms = F,
-            whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
-            verbose=F,numenvpcs=3)
-  }
-  for(combo in combinations){
-    runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 3,
-            univariate = F,dogeo = F,doChroms = F,
-            whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
-            verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
-  }
+  print("GENEDISTMATRIX")
+  print(genedistmatrix)
+  print("SPP")
+  print(spp)
   
+  ##Amphispiza_bilineata_50.bamlist.beagle.gz
+  chr = basename(genedistmatrix)
+  chr = sub("_ngsdist_2022.txt.converted","",chr)
+  chr = sub("_ngsdist_2022.converted.txt","",chr)
+  chr = sub(".beagle.gz","",chr)
   
-  #thislist=c("A","B","C","D","E","F","G")
-  for (matlist_index in 2:length(matList)){
-    #print("SET")
-    thisset=matList[matlist_index:length(matList)]
-    #print(thisset)
-    for(sample_size in 0:length(thisset)) {
-      #print("SAMPLE SIZE")
-      #print(sample_size)
-      for(element_index in 1:length(thisset)) {
-        #print("ELEMENTS")
-        #print(element_index)
-        if(sample_size>0){
-          tempmat=(thisset[element_index:(element_index+sample_size-1)])
-        } else {
-          tempmat=(thisset[element_index])
-        }
-        tempmat=tempmat[!is.na(tempmat)]
-        tempmat=c(matList[c(1,matlist_index)],tempmat)
-        tempmat=(unique(tempmat))
-        print(tempmat)
-        
-        runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
-                univariate = F,dogeo = F,doChroms = F,
-                whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
-                verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
-        for(chrom in sample(chromlist)){
-          runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
-                  univariate = F,dogeo = F,doChroms = T,
-                  whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
-                  verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
-        }
-        runGDMs(doimp = F,doPCA = F,doGENE = F,whichpca = 1,
-                univariate = F,dogeo = F,doChroms = F,
-                whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
-                verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
-        runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 1,
-                univariate = F,dogeo = F,doChroms = F,
-                whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
-                verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
-        runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 2,
-                univariate = F,dogeo = F,doChroms = F,
-                whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
-                verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
-        runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 3,
-                univariate = F,dogeo = F,doChroms = F,
-                whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
-                verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
-        
-      }
-    }
-  }
+  runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+          univariate = F,dogeo = F,doChroms = T,
+          whichchrom=chr,matList=c("GENE","ABUN"),spplist=spp,
+          doEnvpcs=F,
+          verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix,overwrite=F)
   
+  runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+          univariate = F,dogeo = F,doChroms = T,
+          whichchrom=chr,matList=c("GENE","ENV"),spplist=spp,
+          doEnvpcs=F,
+          verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix,overwrite=F)
   
+  runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+          univariate = F,dogeo = F,doChroms = T,
+          whichchrom=chr,matList=c("GENE","IBD"),spplist=spp,
+          doEnvpcs=F,
+          verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix,overwrite=F)
   
+  runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+          univariate = F,dogeo = F,doChroms = T,
+          whichchrom=chr,matList=c("GENE","LGM"),spplist=spp,
+          doEnvpcs=F,
+          verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix,overwrite=F)
   
-  for(i in sample(length(matList):2)) {
-    tempmat = matList[c(1,i)]
-    runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
-            univariate = F,dogeo = F,doChroms = F,
-            whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
-            verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
-    if(i != 2) {
-      tempmat = matList[c(1,2,i)]
-      runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
-              univariate = F,dogeo = F,doChroms = F,
-              whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
-              verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
-      
-      
-      
-      if(i != 3) {
-        tempmat = matList[c(1,2,3,i)]
-        runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
-                univariate = F,dogeo = F,doChroms = F,
-                whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
-                verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
-        
-        if(i != 4) {
-          tempmat = matList[c(1,2,3,4,i)]
-          runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
-                  univariate = F,dogeo = F,doChroms = F,
-                  whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
-                  verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
-          
-          if(i != 5) {
-            tempmat = matList[c(1,2,3,4,5,i)]
-            runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
-                    univariate = F,dogeo = F,doChroms = F,
-                    whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
-                    verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
-            
-            if(i != 6) {
-              tempmat = matList[c(1,2,3,4,5,6,i)]
-              runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
-                      univariate = F,dogeo = F,doChroms = F,
-                      whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
-                      verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
-            }
-            
-          }
-          
-        }
-        
-      }
-    }
-  }
+  runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+          univariate = F,dogeo = F,doChroms = T,
+          whichchrom=chr,matList=c("GENE","PRES"),spplist=spp,
+          doEnvpcs=F,
+          verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix,overwrite=F)
   
-  #for(spp in c("BELLII")) {
-  #for(chrom in sample(chromlist)){
-  for(spp in sample(spplist)) {
-    for(chrom in sample(chromlist)) {
-      for(i in sample(length(matList):3)) {
-        tempmat = matList[c(1,2,i)]
-        runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
-                univariate = F,dogeo = F,doChroms = T,
-                whichchrom=chrom,matList=tempmat,spplist=spp,doEnvpcs=F,
-                verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
-        
-      }
-    }
-  }
+  runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+          univariate = F,dogeo = F,doChroms = T,
+          whichchrom=chr,matList=c("GENE","STR"),spplist=spp,
+          doEnvpcs=F,
+          verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix,overwrite=F)
   
-  for(spp in sample(spplist)) {
-    for(i in sample(length(matList):3)) {
-      tempmat = matList[c(1,2,i)]
-      runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
-              univariate = F,dogeo = F,doChroms = F,
-              whichchrom="1",matList=tempmat,spplist=spp,
-              doEnvpcs=F,
-              verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
-    }
-  }
+  runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+          univariate = F,dogeo = F,doChroms = T,
+          whichchrom=chr,matList=c("GENE","STR","ABUN"),spplist=spp,
+          doEnvpcs=F,
+          verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix,overwrite=F)
   
-  for(spp in sample(spplist)) {
-    for(i in sample(length(matList):3)) {
-      tempmat = matList[c(1,2,i)]  
-      runGDMs(doimp = F,doPCA = T,doGENE = T,whichpca = 3,
-              univariate = F,dogeo = F,doChroms = F,
-              whichchrom="1",matList=tempmat,spplist=spp,
-              doEnvpcs=F,
-              verbose=F,numenvpcs=3)
-      runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 2,
-              univariate = F,dogeo = F,doChroms = F,
-              whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
-              verbose=F,numenvpcs=3) ## nit not work
-      runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 1,
-              univariate = F,dogeo = F,doChroms = F,
-              whichchrom="1",matList=tempmat,spplist=spp,
-              doEnvpcs=F,
-              verbose=F,numenvpcs=3) ## nit not work
-      runGDMs(doimp = F,doPCA = F,doGENE = F,whichpca = 1,
-              univariate = F,dogeo = F,doChroms = F,
-              whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
-              verbose=T,numenvpcs=3) ## bil mel nit not work
-      runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 3,
-              univariate = F,dogeo = F,doChroms = F,
-              whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
-              verbose=F,numenvpcs=3) ## nit failed
-    }
-  }
+  runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+          univariate = F,dogeo = F,doChroms = T,
+          whichchrom=chr,matList=c("GENE","STR","ENV"),spplist=spp,
+          doEnvpcs=F,
+          verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix,overwrite=F)
   
-  ## ibd str models
-  for(chrom in sample(chromlist)){
-    for(spp in sample(spplist)) {
-      #for(chrom in c("16")) {
-      for(i in sample(length(matList):4)) {
-        tempmat = matList[c(1,2,3,i)]
-        runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
-                univariate = F,dogeo = F,doChroms = T,
-                whichchrom=chrom,matList=tempmat,spplist=spp,doEnvpcs=F,
-                verbose=F,numenvpcs=3)
-      }
-    }
-  }
-  for(spp in sample(spplist)) {
-    for(i in sample(length(matList):4)) {
-      tempmat = matList[c(1,2,3,i)]
-      runGDMs(doimp = F,doPCA = F,doGENE = F,whichpca = 1,
-              univariate = F,dogeo = F,doChroms = F,
-              whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
-              verbose=T,numenvpcs=3)
-      runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 1,
-              univariate = F,dogeo = F,doChroms = F,
-              whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
-              verbose=F,numenvpcs=3)
-      runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 2,
-              univariate = F,dogeo = F,doChroms = F,
-              whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
-              verbose=F,numenvpcs=3)
-      runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 3,
-              univariate = F,dogeo = F,doChroms = F,
-              whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
-              verbose=F,numenvpcs=3)
-      runGDMs(doimp = F,doPCA = T,doGENE = T,whichpca = 3,
-              univariate = F,dogeo = F,doChroms = F,
-              whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
-              verbose=F,numenvpcs=3)
-    }
-  }
+  runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+          univariate = F,dogeo = F,doChroms = T,
+          whichchrom=chr,matList=c("GENE","STR","IBD"),spplist=spp,
+          doEnvpcs=F,
+          verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix,overwrite=F)
   
-  ## ibd only models
-  for(chrom in sample(chromlist)){
-    for(spp in spplist) {
-      #for(chrom in c("16")) {
-      for(i in sample(c(length(matList):4,2))) {
-        tempmat = matList[c(1,3,i)]
-        runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
-                univariate = F,dogeo = F,doChroms = T,
-                whichchrom=chrom,matList=tempmat,spplist=spp,doEnvpcs=F,
-                verbose=F,numenvpcs=3)
-      }
-    }
-  }
-  for(spp in sample(spplist)) {
-    for(i in sample(c(length(matList):4,2))) {
-      tempmat = matList[c(1,3,i)]
-      runGDMs(doimp = F,doPCA = F,doGENE = F,whichpca = 1,
-              univariate = F,dogeo = F,doChroms = F,
-              whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
-              verbose=T,numenvpcs=3)
-      runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 1,
-              univariate = F,dogeo = F,doChroms = F,
-              whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
-              verbose=F,numenvpcs=3)
-      runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 2,
-              univariate = F,dogeo = F,doChroms = F,
-              whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
-              verbose=F,numenvpcs=3)
-      runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 3,
-              univariate = F,dogeo = F,doChroms = F,
-              whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
-              verbose=F,numenvpcs=3)
-      runGDMs(doimp = F,doPCA = T,doGENE = T,whichpca = 3,
-              univariate = F,dogeo = F,doChroms = F,
-              whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
-              verbose=F,numenvpcs=3)
-    }
-  }
+  runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+          univariate = F,dogeo = F,doChroms = T,
+          whichchrom=chr,matList=c("GENE","STR","LGM"),spplist=spp,
+          doEnvpcs=F,
+          verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix,overwrite=F)
+  
+  runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+          univariate = F,dogeo = F,doChroms = T,
+          whichchrom=chr,matList=c("GENE","STR","PRES"),spplist=spp,
+          doEnvpcs=F,
+          verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix,overwrite=F)
+  
+  runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+          univariate = F,dogeo = F,doChroms = T,
+          whichchrom=chr,matList=c("GENE","STR","IBD","ABUN"),spplist=spp,
+          doEnvpcs=F,
+          verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix,overwrite=F)
+  
+  runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+          univariate = F,dogeo = F,doChroms = T,
+          whichchrom=chr,matList=c("GENE","STR","IBD","ENV"),spplist=spp,
+          doEnvpcs=F,
+          verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix,overwrite=F)
+  
+  runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+          univariate = F,dogeo = F,doChroms = T,
+          whichchrom=chr,matList=c("GENE","STR","IBD","LGM"),spplist=spp,
+          doEnvpcs=F,
+          verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix,overwrite=F)
+  
+  runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+          univariate = F,dogeo = F,doChroms = T,
+          whichchrom=chr,matList=c("GENE","STR","IBD","PRES"),spplist=spp,
+          doEnvpcs=F,
+          verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix,overwrite=F)
   
 }
+
+
+# bigspecieslist=c("Melozone-fusca",
+#   "Amphispiza-bilineata",
+#                  "Auriparus-flaviceps",
+#                  "Campylorhynchus-brunneicapillus",
+#                  "Cardinalis-sinuatus",
+#                  "Phainopepla-nitens",
+#                  "Polioptila-melanura",
+#                  "Toxostoma-crissale",
+#                  "Toxostoma-curvirostre",
+#                  "Vireo-bellii"
+# )
+# 
+# 
+# 
+# 
+# color_chroms = c("black","#1B9E77","#7570B3","#D95F02","empty")
+# if(run_old==F){
+# for(spp in (bigspecieslist)){
+#   ## added a "-" in front of the sample list to get the rest of the stuff
+#   #for(combo in sample(combinations[-c(1:11,22:25)])){
+#   for(combo in sample(combinations)){
+#     tempmat = matList[unique(c(1,combo))]
+#     for (i in sample(1:length(color_chroms))){
+#       print(color_chroms[i])
+#       #genedistmatrix = paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER2_GENOMES/ANALYSIS/lostruct_2021_done/trees_and_dists/",spp,"_distancematrix_",color_chroms[i],".csv",sep="")
+#       #genedistmatrix = paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER2_GENOMES/ANALYSIS/called_geno/SPECIES/DISTS/",spp,"_distancematrix_",color_chroms[i],".csv",sep="")
+#       #genedistmatrix = paste("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER2_GENOMES/ANALYSIS/lostruct_2021_done/",spp,"_distancematrix_",color_chroms[i],".csv",sep="")
+#       if(file.exists(genedistmatrix)){
+#         capsspp=toupper(strsplit(spp,"-")[[1]][2])
+#         runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+#                 univariate = F,dogeo = F,doChroms = T,
+#                 whichchrom=color_chroms[i],matList=tempmat,spplist=capsspp,#spplist=spp,
+#                 doEnvpcs=F,
+#                 verbose=T,numenvpcs=3,genedistmatrix=genedistmatrix,overwrite=F)
+#       }
+#     }
+#   }
+# }
+# }
+# 
+# if(run_old==T){
+#   
+#   for(combo in combinations){
+#     tempmat = matList[c(1,combo)]
+#     runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+#             univariate = F,dogeo = F,doChroms = F,
+#             whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
+#             verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
+#   }
+#   for(combo in combinations){
+#     for(chrom in sample(chromlist)){
+#       runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+#               univariate = F,dogeo = F,doChroms = T,
+#               whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
+#               verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
+#     }
+#   }
+#   for(combo in combinations){
+#     runGDMs(doimp = F,doPCA = F,doGENE = F,whichpca = 1,
+#             univariate = F,dogeo = F,doChroms = F,
+#             whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
+#             verbose=F,numenvpcs=3)
+#   }
+#   for(combo in combinations){
+#     runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 1,
+#             univariate = F,dogeo = F,doChroms = F,
+#             whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
+#             verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
+#   }
+#   for(combo in combinations){
+#     runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 2,
+#             univariate = F,dogeo = F,doChroms = F,
+#             whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
+#             verbose=F,numenvpcs=3)
+#   }
+#   for(combo in combinations){
+#     runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 3,
+#             univariate = F,dogeo = F,doChroms = F,
+#             whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
+#             verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
+#   }
+#   
+#   
+#   #thislist=c("A","B","C","D","E","F","G")
+#   for (matlist_index in 2:length(matList)){
+#     #print("SET")
+#     thisset=matList[matlist_index:length(matList)]
+#     #print(thisset)
+#     for(sample_size in 0:length(thisset)) {
+#       #print("SAMPLE SIZE")
+#       #print(sample_size)
+#       for(element_index in 1:length(thisset)) {
+#         #print("ELEMENTS")
+#         #print(element_index)
+#         if(sample_size>0){
+#           tempmat=(thisset[element_index:(element_index+sample_size-1)])
+#         } else {
+#           tempmat=(thisset[element_index])
+#         }
+#         tempmat=tempmat[!is.na(tempmat)]
+#         tempmat=c(matList[c(1,matlist_index)],tempmat)
+#         tempmat=(unique(tempmat))
+#         print(tempmat)
+#         
+#         runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+#                 univariate = F,dogeo = F,doChroms = F,
+#                 whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
+#                 verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
+#         for(chrom in sample(chromlist)){
+#           runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+#                   univariate = F,dogeo = F,doChroms = T,
+#                   whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
+#                   verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
+#         }
+#         runGDMs(doimp = F,doPCA = F,doGENE = F,whichpca = 1,
+#                 univariate = F,dogeo = F,doChroms = F,
+#                 whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
+#                 verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
+#         runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 1,
+#                 univariate = F,dogeo = F,doChroms = F,
+#                 whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
+#                 verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
+#         runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 2,
+#                 univariate = F,dogeo = F,doChroms = F,
+#                 whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
+#                 verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
+#         runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 3,
+#                 univariate = F,dogeo = F,doChroms = F,
+#                 whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
+#                 verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
+#         
+#       }
+#     }
+#   }
+#   
+#   
+#   
+#   
+#   for(i in sample(length(matList):2)) {
+#     tempmat = matList[c(1,i)]
+#     runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+#             univariate = F,dogeo = F,doChroms = F,
+#             whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
+#             verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
+#     if(i != 2) {
+#       tempmat = matList[c(1,2,i)]
+#       runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+#               univariate = F,dogeo = F,doChroms = F,
+#               whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
+#               verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
+#       
+#       
+#       
+#       if(i != 3) {
+#         tempmat = matList[c(1,2,3,i)]
+#         runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+#                 univariate = F,dogeo = F,doChroms = F,
+#                 whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
+#                 verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
+#         
+#         if(i != 4) {
+#           tempmat = matList[c(1,2,3,4,i)]
+#           runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+#                   univariate = F,dogeo = F,doChroms = F,
+#                   whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
+#                   verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
+#           
+#           if(i != 5) {
+#             tempmat = matList[c(1,2,3,4,5,i)]
+#             runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+#                     univariate = F,dogeo = F,doChroms = F,
+#                     whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
+#                     verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
+#             
+#             if(i != 6) {
+#               tempmat = matList[c(1,2,3,4,5,6,i)]
+#               runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+#                       univariate = F,dogeo = F,doChroms = F,
+#                       whichchrom=chrom,matList=tempmat,spplist=sample(spplist),doEnvpcs=F,
+#                       verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
+#             }
+#             
+#           }
+#           
+#         }
+#         
+#       }
+#     }
+#   }
+#   
+#   #for(spp in c("BELLII")) {
+#   #for(chrom in sample(chromlist)){
+#   for(spp in sample(spplist)) {
+#     for(chrom in sample(chromlist)) {
+#       for(i in sample(length(matList):3)) {
+#         tempmat = matList[c(1,2,i)]
+#         runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+#                 univariate = F,dogeo = F,doChroms = T,
+#                 whichchrom=chrom,matList=tempmat,spplist=spp,doEnvpcs=F,
+#                 verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
+#         
+#       }
+#     }
+#   }
+#   
+#   for(spp in sample(spplist)) {
+#     for(i in sample(length(matList):3)) {
+#       tempmat = matList[c(1,2,i)]
+#       runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+#               univariate = F,dogeo = F,doChroms = F,
+#               whichchrom="1",matList=tempmat,spplist=spp,
+#               doEnvpcs=F,
+#               verbose=F,numenvpcs=3,genedistmatrix=genedistmatrix)
+#     }
+#   }
+#   
+#   for(spp in sample(spplist)) {
+#     for(i in sample(length(matList):3)) {
+#       tempmat = matList[c(1,2,i)]  
+#       runGDMs(doimp = F,doPCA = T,doGENE = T,whichpca = 3,
+#               univariate = F,dogeo = F,doChroms = F,
+#               whichchrom="1",matList=tempmat,spplist=spp,
+#               doEnvpcs=F,
+#               verbose=F,numenvpcs=3)
+#       runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 2,
+#               univariate = F,dogeo = F,doChroms = F,
+#               whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
+#               verbose=F,numenvpcs=3) ## nit not work
+#       runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 1,
+#               univariate = F,dogeo = F,doChroms = F,
+#               whichchrom="1",matList=tempmat,spplist=spp,
+#               doEnvpcs=F,
+#               verbose=F,numenvpcs=3) ## nit not work
+#       runGDMs(doimp = F,doPCA = F,doGENE = F,whichpca = 1,
+#               univariate = F,dogeo = F,doChroms = F,
+#               whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
+#               verbose=T,numenvpcs=3) ## bil mel nit not work
+#       runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 3,
+#               univariate = F,dogeo = F,doChroms = F,
+#               whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
+#               verbose=F,numenvpcs=3) ## nit failed
+#     }
+#   }
+#   
+#   ## ibd str models
+#   for(chrom in sample(chromlist)){
+#     for(spp in sample(spplist)) {
+#       #for(chrom in c("16")) {
+#       for(i in sample(length(matList):4)) {
+#         tempmat = matList[c(1,2,3,i)]
+#         runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+#                 univariate = F,dogeo = F,doChroms = T,
+#                 whichchrom=chrom,matList=tempmat,spplist=spp,doEnvpcs=F,
+#                 verbose=F,numenvpcs=3)
+#       }
+#     }
+#   }
+#   for(spp in sample(spplist)) {
+#     for(i in sample(length(matList):4)) {
+#       tempmat = matList[c(1,2,3,i)]
+#       runGDMs(doimp = F,doPCA = F,doGENE = F,whichpca = 1,
+#               univariate = F,dogeo = F,doChroms = F,
+#               whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
+#               verbose=T,numenvpcs=3)
+#       runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 1,
+#               univariate = F,dogeo = F,doChroms = F,
+#               whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
+#               verbose=F,numenvpcs=3)
+#       runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 2,
+#               univariate = F,dogeo = F,doChroms = F,
+#               whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
+#               verbose=F,numenvpcs=3)
+#       runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 3,
+#               univariate = F,dogeo = F,doChroms = F,
+#               whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
+#               verbose=F,numenvpcs=3)
+#       runGDMs(doimp = F,doPCA = T,doGENE = T,whichpca = 3,
+#               univariate = F,dogeo = F,doChroms = F,
+#               whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
+#               verbose=F,numenvpcs=3)
+#     }
+#   }
+#   
+#   ## ibd only models
+#   for(chrom in sample(chromlist)){
+#     for(spp in spplist) {
+#       #for(chrom in c("16")) {
+#       for(i in sample(c(length(matList):4,2))) {
+#         tempmat = matList[c(1,3,i)]
+#         runGDMs(doimp = F,doPCA = F,doGENE = T,whichpca = 1,
+#                 univariate = F,dogeo = F,doChroms = T,
+#                 whichchrom=chrom,matList=tempmat,spplist=spp,doEnvpcs=F,
+#                 verbose=F,numenvpcs=3)
+#       }
+#     }
+#   }
+#   for(spp in sample(spplist)) {
+#     for(i in sample(c(length(matList):4,2))) {
+#       tempmat = matList[c(1,3,i)]
+#       runGDMs(doimp = F,doPCA = F,doGENE = F,whichpca = 1,
+#               univariate = F,dogeo = F,doChroms = F,
+#               whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
+#               verbose=T,numenvpcs=3)
+#       runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 1,
+#               univariate = F,dogeo = F,doChroms = F,
+#               whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
+#               verbose=F,numenvpcs=3)
+#       runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 2,
+#               univariate = F,dogeo = F,doChroms = F,
+#               whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
+#               verbose=F,numenvpcs=3)
+#       runGDMs(doimp = F,doPCA = T,doGENE = F,whichpca = 3,
+#               univariate = F,dogeo = F,doChroms = F,
+#               whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
+#               verbose=F,numenvpcs=3)
+#       runGDMs(doimp = F,doPCA = T,doGENE = T,whichpca = 3,
+#               univariate = F,dogeo = F,doChroms = F,
+#               whichchrom="1",matList=tempmat,spplist=spp,doEnvpcs=F,
+#               verbose=F,numenvpcs=3)
+#     }
+#   }
+#   
+# }

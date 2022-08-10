@@ -2,15 +2,17 @@
 
 
 #outfile = "/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/GDM_results/multivariate/extracting_splines.alltogether"
-outfile="/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/bru_20may2021.alltogether"
+outfile = "/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/extracting_best_column_ngsdist_lostruct_29July2022.alltogether"
 
 setwd("/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/")
 
 files = list.files(path="/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/",
-                   pattern="modelparameters",recursive=T,full.names = T)
+                   pattern="modelparameters",recursive=F,full.names = T)
 #files = files[!(grepl("chr",files))]
 #files = files[!(grepl("gene",files))]
-files = files[(grepl("BRU",files))]
+#files = files[(grepl("BRU",files))]
+#files = files[(grepl("FUS",files))]
+files = files[!(grepl(".txt.gz$",files))]
 
 newdf=NULL
 
@@ -22,7 +24,7 @@ for (i in 1:length(files)) {
   types=strsplit(base,"_")[[1]]
   spp=types[1]
   variables=types[2]
-  dataset=types[4]
+  dataset=paste(types[4:length(types)],sep="-",collapse="-")
   
   txt=readLines(file,n=20)
   null=txt[grepl("NULL Deviance",txt)]
@@ -33,28 +35,54 @@ for (i in 1:length(files)) {
   dev= as.numeric(strsplit(dev, ":")[[1]][2])
   exp= as.numeric(strsplit(exp, ":")[[1]][2])
   
-  linetoadd = c(spp,dataset,variables,null,dev,exp)
-  names(linetoadd) = c("SPECIES","DATASET","MODEL","NULL","DEV","EXP")
+  linetoadd = cbind("SPECIES"=spp,"DATASET"=dataset,"MODEL"=variables,"NULL"=null,"DEV"=dev,"EXP"=exp)
   
   if(is.null(newdf)){
-    newdf = t(as.data.frame(linetoadd))
+    newdf = linetoadd
+    write.table(linetoadd,outfile,append=T,row.names=F,col.names = T,sep="\t",quote=F)
   } else {
     newdf = rbind(newdf,linetoadd)
+    write.table(linetoadd,outfile,append=T,row.names=F,col.names = F,sep="\t",quote=F)
   }
+  R.utils::gzip(file,overwrite=T)
 }
 
 newdf=unique(newdf)
 
-write.table(newdf,outfile,row.names = F,append = T)
+write.table(newdf,outfile,row.names = F,append = T,sep="\t",quote=F)
 
-tab=table(newdf[,"SPECIES"],newdf[,"DATASET"])
-corrplot::corrplot(tab,is.corr=F,method="number")
+#tab=table(newdf[,"SPECIES"],newdf[,"DATASET"])
+#corrplot::corrplot(tab,is.corr=F,method="number")
+
+newdf = as.data.frame(newdf)
+
+models_list = sort(unique(newdf$MODEL))
+dataset_list = sort(unique(newdf$DATASET))
+species_list = sort(unique(newdf$SPECIES))
+dataset_species = expand.grid(dataset_list, species_list, stringsAsFactors = FALSE)
+
+pivot_df = NULL
+
+for(model_i in models_list){
+  print(model_i)
+  newdf_mod = newdf[newdf$MODEL==model_i,]
+  newdf_mod = newdf_mod[,c("SPECIES","DATASET","EXP")]
+  colnames(newdf_mod) = c("SPECIES","DATASET",model_i)
+  if(is.null(pivot_df)){
+    pivot_df = newdf_mod
+  } else {
+    pivot_df = merge(pivot_df,newdf_mod,by=c("SPECIES","DATASET"),all=T)
+  }
+}
+
+write.table(pivot_df,paste(outfile,".PIVOT.txt",sep=""),row.names = F,append = T,sep="\t",quote=F)
 
 
 ## can you get relative impacts of everything too? 
 ## get spline heights 
 files = list.files(path="/Users/kprovost/Dropbox (AMNH)/Dissertation/CHAPTER3_TRAITS/Distances/",
-                   pattern="splineheights.*txt",recursive=T,full.names = T)
+                   pattern="splineheights.*txt",recursive=F,full.names = T)
+files=files[grepl("SUBSET",files)]
 
 fulldf = data.frame()
 for(i in 1:length(files)) {
@@ -73,13 +101,15 @@ for(i in 1:length(files)) {
   df$PARAMS = params
   df$CHROM = chrom
   
-  write.table(df,"~/splineheights.txt",append=T)
+  write.table(df,"~/splineheights_28July2022.txt",append=T)
   
   fulldf=plyr::rbind.fill(fulldf,df)
   
 }
 
-okay=c("ABUN","ENV","IBD","LGM","PRES","STR","STR-ABUN","STR-ENV","STR-IBD","STR-LGM","STR-PRES","STR-IBD-ABUN","STR-IBD-ENV","STR-IBD-LGM","STR-IBD-PRES")
+okay=c("ABUN","ENV","IBD","LGM","PRES","STR",
+       "STR-ABUN","STR-ENV","STR-IBD","STR-LGM","STR-PRES",
+       "STR-IBD-ABUN","STR-IBD-ENV","STR-IBD-LGM","STR-IBD-PRES")
 
 fulldf=fulldf[,c("SPP","PARAMS","CHROM","ABUN","ENV","IBD","LGM","PRES","STR")]
 fulldf=unique(fulldf)
